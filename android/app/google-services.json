@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "861499445565",
+    "project_id": "absensi-acara",
+    "storage_bucket": "absensi-acara.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:861499445565:android:a6f73043d6ceb84980b554",
+        "android_client_info": {
+          "package_name": "com.example.absensi_acara"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDMhYztXd8oPPQRgjEexDkCfv943-NyVxE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
