@@ -1,21 +1,58 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
-
-// Services
-import 'services/auth_service.dart';
-
-// Screens
-import 'screens/login_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/splash_screen.dart';
+import 'admin/admin_home.dart';
+import 'services/database_service.dart';
+import 'models/participant.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(const MyApp());
+  
+  try {
+    // Initialize database and add sample data
+    await _initializeSampleData();
+    runApp(const MyApp());
+  } catch (e) {
+    print('Error during initialization: $e');
+    runApp(const ErrorApp());
+  }
+}
+
+Future<void> _initializeSampleData() async {
+  try {
+    final dbService = DatabaseService();
+    
+    // Sample participants
+    final sampleParticipants = [
+      Participant(
+        id: '001',
+        name: 'Ahmad Rizki',
+        event: 'Seminar Flutter 2024',
+        email: 'ahmad@email.com',
+        phone: '081234567890',
+      ),
+      Participant(
+        id: '002', 
+        name: 'Siti Nurhaliza',
+        event: 'Workshop Mobile Development',
+        email: 'siti@email.com',
+        phone: '081234567891',
+      ),
+      Participant(
+        id: '003',
+        name: 'Budi Santoso',
+        event: 'Tech Conference 2024',
+        email: 'budi@email.com',
+        phone: '081234567892',
+      ),
+    ];
+
+    // Insert sample data
+    for (var participant in sampleParticipants) {
+      await dbService.insertParticipant(participant);
+    }
+    print('Sample data initialized successfully');
+  } catch (e) {
+    print('Error initializing sample data: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -23,33 +60,27 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (_) => AuthService(),
-        ),
-      ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Absensi Acara',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          textTheme: GoogleFonts.poppinsTextTheme(),
-          useMaterial3: true,
-        ),
-        home: StreamBuilder<User?>(
-          stream: FirebaseAuth.instance.authStateChanges(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const SplashScreen();
-            }
-            
-            if (snapshot.hasData) {
-              return const HomeScreen();
-            }
-            
-            return const LoginScreen();
-          },
+    return MaterialApp(
+      title: 'Aplikasi Presensi QR Code',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
+      ),
+      home: const AdminHomeScreen(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class ErrorApp extends StatelessWidget {
+  const ErrorApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text('Error loading app'),
         ),
       ),
     );
