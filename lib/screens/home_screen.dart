@@ -28,6 +28,29 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.dispose();
   }
 
+  void _showLogoutDialog(BuildContext context, AuthService auth) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Apakah Anda yakin ingin keluar?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              auth.signOut();
+            },
+            child: const Text('Ya, Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.read<AuthService>();
@@ -75,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ),
                     IconButton(
                       icon: const Icon(Icons.logout, color: Colors.black87),
-                      onPressed: () => auth.signOut(),
+                      onPressed: () => _showLogoutDialog(context, auth),
                       tooltip: 'Logout',
                     ),
                   ],

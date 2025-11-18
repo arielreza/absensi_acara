@@ -1,19 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 import 'admin/admin_home.dart';
+import 'user/user_home.dart';
 import 'services/database_service.dart';
+import 'services/auth_service.dart';
 import 'models/participant.dart';
+import 'screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Initialize Firebase
   try {
-    // Initialize database and add sample data
-    await _initializeSampleData();
-    runApp(const MyApp());
+    await Firebase.initializeApp();
   } catch (e) {
-    print('Error during initialization: $e');
-    runApp(const ErrorApp());
+    print('Firebase init error: $e');
   }
+
+  // Initialize local database in background (non-blocking)
+  _initializeSampleData();
+  
+  runApp(const MyApp());
 }
 
 Future<void> _initializeSampleData() async {
@@ -60,15 +68,53 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Aplikasi Presensi QR Code',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
+    return ChangeNotifierProvider(
+      create: (_) => AuthService(),
+      child: MaterialApp(
+        title: 'Aplikasi Presensi QR Code',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          useMaterial3: true,
+        ),
+        home: const AuthWrapper(),
+        debugShowCheckedModeBanner: false,
       ),
-      home: const AdminHomeScreen(),
-      debugShowCheckedModeBanner: false,
     );
+  }
+}
+
+/// Routes to LoginScreen, UserHomeScreen or AdminHomeScreen based on user auth state & role
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = context.watch<AuthService>().currentUser;
+    
+    if (user != null) {
+      // Check user role and route accordingly
+      return FutureBuilder<String?>(
+        future: context.read<AuthService>().getUserRole(user.uid),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          
+          final role = snapshot.data ?? 'user';
+          
+          if (role == 'admin') {
+            return const AdminHomeScreen();
+          } else {
+            return const UserHomeScreen();
+          }
+        },
+      );
+    }
+    return const LoginScreen();
   }
 }
 
