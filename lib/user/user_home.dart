@@ -48,7 +48,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => _showLogoutDialog(context, auth),
-            tooltip: 'Logout',
           ),
         ],
       ),
@@ -84,6 +83,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     }
   }
 
+  // ---------------- HOME TAB ---------------- //
   Widget _buildHomeTab() {
     final user = context.read<AuthService>().currentUser;
     return SingleChildScrollView(
@@ -96,10 +96,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Halo,',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
-                ),
+                const Text('Halo,', style: TextStyle(color: Colors.white70)),
                 const SizedBox(height: 4),
                 Text(
                   user?.email ?? 'User',
@@ -109,361 +106,103 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _StatusBadge(label: 'Hadir', count: '0', icon: Icons.check_circle),
-                      _StatusBadge(label: 'Absen', count: '0', icon: Icons.cancel),
-                      _StatusBadge(label: 'Izin', count: '0', icon: Icons.help_center),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Acara Mendatang',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                _EventCard(
-                  title: 'Seminar Flutter 2024',
-                  date: 'Sat, 22 Nov • 11:00',
-                  location: 'AUS Serpong Office',
-                  type: 'Seminar',
-                  status: 'Belum Hadir',
-                ),
-                const SizedBox(height: 12),
-                _EventCard(
-                  title: 'Workshop Mobile Development',
-                  date: 'Sun, 23 Nov • 09:00',
-                  location: 'Kec. Kedungkandang',
-                  type: 'Workshop',
-                  status: 'Belum Hadir',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
+  // ---------------- EVENT TAB ---------------- //
   Widget _buildEventTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _EventCard(
-          title: 'Seminar Flutter 2024',
-          date: 'Sat, 22 Nov • 11:00',
-          location: 'AUS Serpong Office',
-          type: 'Seminar',
-          status: 'Belum Hadir',
-        ),
-        const SizedBox(height: 12),
-        _EventCard(
-          title: 'Workshop Mobile Development',
-          date: 'Sun, 23 Nov • 09:00',
-          location: 'Kec. Kedungkandang',
-          type: 'Workshop',
-          status: 'Belum Hadir',
-        ),
-        const SizedBox(height: 12),
-        _EventCard(
-          title: 'Tech Conference 2024',
-          date: 'Mon, 24 Nov • 10:00',
-          location: 'Jakarta Convention Center',
-          type: 'Conference',
-          status: 'Hadir',
-        ),
-      ],
+    return Center(
+      child: Text("Daftar Event Akan Ditampilkan Di Sini"),
     );
   }
 
+  // ---------------- HISTORY TAB ---------------- //
   Widget _buildHistoryTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _HistoryItem(
-          title: 'Tech Conference 2024',
-          date: 'Mon, 24 Nov',
-          status: 'Hadir',
-          time: '10:15 AM',
-        ),
-        const Divider(),
-        _HistoryItem(
-          title: 'Workshop Mobile Development',
-          date: 'Sun, 23 Nov',
-          status: 'Absen',
-          time: '-',
-        ),
-        const Divider(),
-        _HistoryItem(
-          title: 'Seminar Flutter 2024',
-          date: 'Sat, 22 Nov',
-          status: 'Hadir',
-          time: '11:05 AM',
-        ),
-      ],
+    return Center(
+      child: Text("Riwayat Presensi Akan Ditampilkan Di Sini"),
     );
   }
 
+  // ---------------- PROFILE TAB ---------------- //
   Widget _buildProfileTab() {
-    final user = context.read<AuthService>().currentUser;
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                borderRadius: BorderRadius.circular(40),
-              ),
-              child: const Icon(Icons.person, size: 40, color: Colors.white),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              user?.email ?? 'User',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Peserta',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            _ProfileInfoCard(
-              title: 'Email',
-              value: user?.email ?? '-',
-              icon: Icons.email,
-            ),
-            const SizedBox(height: 12),
-            _ProfileInfoCard(
-              title: 'Role',
-              value: 'Peserta',
-              icon: Icons.badge,
-            ),
-            const SizedBox(height: 12),
-            _ProfileInfoCard(
-              title: 'Status',
-              value: 'Aktif',
-              icon: Icons.check_circle,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: context.read<AuthService>().getUserData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-class _StatusBadge extends StatelessWidget {
-  final String label;
-  final String count;
-  final IconData icon;
+        final data = snapshot.data;
 
-  const _StatusBadge({
-    required this.label,
-    required this.count,
-    required this.icon,
-  });
+        if (data == null) {
+          return const Center(child: Text("Gagal memuat profil"));
+        }
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.white, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          count,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
-        ),
-      ],
-    );
-  }
-}
-
-class _EventCard extends StatelessWidget {
-  final String title;
-  final String date;
-  final String location;
-  final String type;
-  final String status;
-
-  const _EventCard({
-    required this.title,
-    required this.date,
-    required this.location,
-    required this.type,
-    required this.status,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor = status == 'Hadir' ? Colors.green : Colors.orange;
-    final bgColor = status == 'Hadir' ? Colors.green.shade50 : Colors.orange.shade50;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: statusColor.withOpacity(0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
             children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.blue,
+                child: const Icon(Icons.person, color: Colors.white, size: 40),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  status,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              const SizedBox(height: 16),
+
+              Text(
+                data["name"] ?? "-",
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+
+              Text(
+                data["email"] ?? "-",
+                style: const TextStyle(color: Colors.grey),
+              ),
+
+              const SizedBox(height: 24),
+
+              _ProfileInfoCard(
+                title: "Nama Lengkap",
+                value: data["name"] ?? "-",
+                icon: Icons.person,
+              ),
+              const SizedBox(height: 12),
+
+              _ProfileInfoCard(
+                title: "NIM",
+                value: data["nim"] ?? "-",
+                icon: Icons.badge,
+              ),
+              const SizedBox(height: 12),
+
+              _ProfileInfoCard(
+                title: "Email",
+                value: data["email"] ?? "-",
+                icon: Icons.email,
+              ),
+              const SizedBox(height: 12),
+
+              _ProfileInfoCard(
+                title: "Role",
+                value: data["role"] ?? "-",
+                icon: Icons.verified_user,
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
-              const SizedBox(width: 6),
-              Text(date, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Icon(Icons.location_on, size: 14, color: Colors.grey),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  location,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-class _HistoryItem extends StatelessWidget {
-  final String title;
-  final String date;
-  final String status;
-  final String time;
-
-  const _HistoryItem({
-    required this.title,
-    required this.date,
-    required this.status,
-    required this.time,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor = status == 'Hadir'
-        ? Colors.green
-        : status == 'Izin'
-            ? Colors.orange
-            : Colors.red;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          Icon(Icons.event, color: statusColor),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(date, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                    const SizedBox(width: 8),
-                    Text(time, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(
-                color: statusColor,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// ================= WIDGET KECIL ================= //
 
 class _ProfileInfoCard extends StatelessWidget {
   final String title;
@@ -479,10 +218,10 @@ class _ProfileInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
@@ -491,14 +230,11 @@ class _ProfileInfoCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
+              Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -507,5 +243,3 @@ class _ProfileInfoCard extends StatelessWidget {
     );
   }
 }
-
-
