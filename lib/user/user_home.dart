@@ -232,17 +232,22 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ),
 
               const SizedBox(height: 4),
-              const Text('Peserta', style: TextStyle(color: Colors.grey)),
-              const SizedBox(height: 24),
-
+              _ProfileInfoCard(
+                title: "Nama Lengkap",
+                value: data["name"] ?? "-",
+                icon: Icons.person,
+              ),
+              const SizedBox(height: 12),
+              _ProfileInfoCard(title: "NIM", value: data["nim"] ?? "-", icon: Icons.badge),
+              // const Text('Peserta', style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 12),
               _ProfileInfoCard(title: 'Email', value: data['email'] ?? '-', icon: Icons.email),
 
               const SizedBox(height: 12),
 
-              _ProfileInfoCard(title: 'Role', value: 'Peserta', icon: Icons.badge),
+              // _ProfileInfoCard(title: 'Role', value: 'Peserta', icon: Icons.badge),
 
-              const SizedBox(height: 12),
-
+              // const SizedBox(height: 12),
               _ProfileInfoCard(title: 'Status', value: 'Aktif', icon: Icons.check_circle),
             ],
           ),
