@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Aplikasi Presensi QR Code',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(useMaterial3: true, primarySwatch: Colors.blue),
+        theme: ThemeData(useMaterial3: true, primarySwatch: Colors.blue, fontFamily: 'Poppins'),
         home: const AuthWrapper(),
       ),
     );
