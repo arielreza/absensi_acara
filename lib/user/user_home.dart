@@ -1,5 +1,10 @@
+import 'package:absensi_acara/user/service/event_register_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
 import '../services/auth_service.dart';
 
 class UserHomeScreen extends StatefulWidget {
@@ -19,10 +24,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         title: const Text('Logout'),
         content: const Text('Apakah Anda yakin ingin keluar?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Batal'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
@@ -86,6 +88,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   Widget _buildHomeTab() {
     final user = context.read<AuthService>().currentUser;
+    final nim = context.read<AuthService>().currentUser?.email ?? '';
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -96,10 +100,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Halo,',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
-                ),
+                const Text('Halo,', style: TextStyle(color: Colors.white70, fontSize: 14)),
                 const SizedBox(height: 4),
                 Text(
                   user?.email ?? 'User',
@@ -129,68 +130,82 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Acara Mendatang',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                _EventCard(
-                  title: 'Seminar Flutter 2024',
-                  date: 'Sat, 22 Nov • 11:00',
-                  location: 'AUS Serpong Office',
-                  type: 'Seminar',
-                  status: 'Belum Hadir',
-                ),
-                const SizedBox(height: 12),
-                _EventCard(
-                  title: 'Workshop Mobile Development',
-                  date: 'Sun, 23 Nov • 09:00',
-                  location: 'Kec. Kedungkandang',
-                  type: 'Workshop',
-                  status: 'Belum Hadir',
-                ),
-              ],
-            ),
+          StreamBuilder(
+            stream: FirebaseFirestore.instance.collection('events').snapshots(),
+            builder: (context, asyncSnapshot) {
+              if (asyncSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (!asyncSnapshot.hasData || asyncSnapshot.data!.docs.isEmpty) {
+                return const Center(child: Text("Tidak ada event"));
+              }
+
+              final events = asyncSnapshot.data!.docs;
+
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                itemCount: events.length,
+                itemBuilder: (context, index) {
+                  final doc = events[index];
+                  final data = doc.data();
+
+                  if (data['is_active'] == true) {
+                    return _EventCard(
+                      eventId: doc.id,
+                      title: data['event_name'] ?? '',
+                      date: data['event_date'],
+                      location: data['location'] ?? '',
+                      nim: nim,
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              );
+            },
           ),
-          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
   Widget _buildEventTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _EventCard(
-          title: 'Seminar Flutter 2024',
-          date: 'Sat, 22 Nov • 11:00',
-          location: 'AUS Serpong Office',
-          type: 'Seminar',
-          status: 'Belum Hadir',
-        ),
-        const SizedBox(height: 12),
-        _EventCard(
-          title: 'Workshop Mobile Development',
-          date: 'Sun, 23 Nov • 09:00',
-          location: 'Kec. Kedungkandang',
-          type: 'Workshop',
-          status: 'Belum Hadir',
-        ),
-        const SizedBox(height: 12),
-        _EventCard(
-          title: 'Tech Conference 2024',
-          date: 'Mon, 24 Nov • 10:00',
-          location: 'Jakarta Convention Center',
-          type: 'Conference',
-          status: 'Hadir',
-        ),
-      ],
+    final nim = context.read<AuthService>().currentUser?.email ?? '';
+
+    return StreamBuilder(
+      stream: FirebaseFirestore.instance.collection('events').snapshots(),
+      builder: (context, asyncSnapshot) {
+        if (asyncSnapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!asyncSnapshot.hasData || asyncSnapshot.data!.docs.isEmpty) {
+          return const Center(child: Text("Tidak ada event"));
+        }
+
+        final events = asyncSnapshot.data!.docs;
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: events.length,
+          itemBuilder: (context, index) {
+            final doc = events[index];
+            final data = doc.data();
+
+            if (data['is_active'] == true) {
+              return _EventCard(
+                eventId: doc.id,
+                title: data['event_name'],
+                date: data['event_date'],
+                location: data['location'],
+                nim: nim,
+              );
+            }
+            return null;
+          },
+        );
+      },
     );
   }
 
@@ -244,28 +259,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Peserta',
-              style: TextStyle(color: Colors.grey),
-            ),
+            const Text('Peserta', style: TextStyle(color: Colors.grey)),
             const SizedBox(height: 24),
-            _ProfileInfoCard(
-              title: 'Email',
-              value: user?.email ?? '-',
-              icon: Icons.email,
-            ),
+            _ProfileInfoCard(title: 'Email', value: user?.email ?? '-', icon: Icons.email),
             const SizedBox(height: 12),
-            _ProfileInfoCard(
-              title: 'Role',
-              value: 'Peserta',
-              icon: Icons.badge,
-            ),
+            _ProfileInfoCard(title: 'Role', value: 'Peserta', icon: Icons.badge),
             const SizedBox(height: 12),
-            _ProfileInfoCard(
-              title: 'Status',
-              value: 'Aktif',
-              icon: Icons.check_circle,
-            ),
+            _ProfileInfoCard(title: 'Status', value: 'Aktif', icon: Icons.check_circle),
           ],
         ),
       ),
@@ -278,11 +278,7 @@ class _StatusBadge extends StatelessWidget {
   final String count;
   final IconData icon;
 
-  const _StatusBadge({
-    required this.label,
-    required this.count,
-    required this.icon,
-  });
+  const _StatusBadge({required this.label, required this.count, required this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -292,111 +288,237 @@ class _StatusBadge extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           count,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
-        ),
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
       ],
     );
   }
 }
 
-class _EventCard extends StatelessWidget {
+class _EventCard extends ConsumerWidget {
+  final String eventId;
   final String title;
-  final String date;
+  final Timestamp date;
   final String location;
-  final String type;
-  final String status;
+  final String nim;
+  // final String imageUrl;
 
   const _EventCard({
+    required this.eventId,
     required this.title,
     required this.date,
     required this.location,
-    required this.type,
-    required this.status,
+    required this.nim,
+    // required this.imageUrl,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final statusColor = status == 'Hadir' ? Colors.green : Colors.orange;
-    final bgColor = status == 'Hadir' ? Colors.green.shade50 : Colors.orange.shade50;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final eventDate = date.toDate();
+    final dateFormatted = DateFormat("EEE, dd MMM yyyy").format(eventDate);
+    final timeFormatted = DateFormat("HH:mm").format(eventDate);
+    final statusColor = Colors.green;
+    final bgColor = Colors.green.shade50;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: statusColor.withOpacity(0.3)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+          // ---------------------- IMAGE ----------------------
+          SizedBox(height: 160),
+
+          // ClipRRect(
+          //   borderRadius: const BorderRadius.only(
+          //     topLeft: Radius.circular(16),
+          //     topRight: Radius.circular(16),
+          //   ),
+          //   child: Image.network(imageUrl, height: 160, width: double.infinity, fit: BoxFit.cover),
+          // ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ---------------------- TITLE ----------------------
+                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+
+                const SizedBox(height: 8),
+
+                // ---------------------- DATE + TIME ----------------------
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    Text(
+                      "$dateFormatted   •   $timeFormatted",
+                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                  ],
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor,
+
+                const SizedBox(height: 8),
+
+                // ---------------------- LOCATION ----------------------
+                Row(
+                  children: [
+                    const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        location,
+                        style: const TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                // ---------------------- FREE LABEL ----------------------
+                InkWell(
+                  onTap: () async {
+                    ref.read(eventRegisterService).daftarEvent(eventId: eventId, nimPeserta: nim);
+                  },
                   borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  status,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Daftar',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
-              const SizedBox(width: 6),
-              Text(date, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Icon(Icons.location_on, size: 14, color: Colors.grey),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  location,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 }
+
+// class _EventCard extends ConsumerWidget {
+//   final String eventId;
+//   final String title;
+//   final Timestamp date;
+//   final String location;
+//   // final String type;
+//   // final String status;
+//   final String nim;
+
+//   const _EventCard({
+//     super.key,
+//     required this.eventId,
+//     required this.title,
+//     required this.date,
+//     required this.location,
+//     // required this.type,
+//     // required this.status,
+//     required this.nim,
+//   });
+
+//   @override
+//   Widget build(BuildContext context, WidgetRef ref) {
+//     final dateTime = date.toDate(); // convert dari Timestamp
+//     final formattedDate = DateFormat('EEE, dd MMM yyyy • HH:mm').format(dateTime);
+//     final statusColor = Colors.green;
+//     final bgColor = Colors.green.shade50;
+
+//     return Container(
+//       padding: const EdgeInsets.all(12),
+//       decoration: BoxDecoration(
+//         color: bgColor,
+//         borderRadius: BorderRadius.circular(12),
+//         border: Border.all(color: statusColor.withOpacity(0.3)),
+//       ),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           Row(
+//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//             children: [
+//               Expanded(
+//                 child: Text(
+//                   title,
+//                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+//                   maxLines: 2,
+//                   overflow: TextOverflow.ellipsis,
+//                 ),
+//               ),
+//               InkWell(
+//                 onTap: () async {
+//                   ref.read(eventRegisterService).daftarEvent(eventId: eventId, nimPeserta: nim);
+//                 },
+//                 borderRadius: BorderRadius.circular(12),
+//                 child: Container(
+//                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+//                   decoration: BoxDecoration(
+//                     color: statusColor,
+//                     borderRadius: BorderRadius.circular(12),
+//                   ),
+//                   child: Text(
+//                     'Daftar',
+//                     style: const TextStyle(
+//                       color: Colors.white,
+//                       fontSize: 11,
+//                       fontWeight: FontWeight.bold,
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ],
+//           ),
+//           const SizedBox(height: 8),
+//           Row(
+//             children: [
+//               const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
+//               const SizedBox(width: 6),
+//               Text(formattedDate, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+//             ],
+//           ),
+//           const SizedBox(height: 4),
+//           Row(
+//             children: [
+//               const Icon(Icons.location_on, size: 14, color: Colors.grey),
+//               const SizedBox(width: 6),
+//               Expanded(
+//                 child: Text(
+//                   location,
+//                   style: const TextStyle(fontSize: 12, color: Colors.grey),
+//                   maxLines: 1,
+//                   overflow: TextOverflow.ellipsis,
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
 
 class _HistoryItem extends StatelessWidget {
   final String title;
@@ -416,8 +538,8 @@ class _HistoryItem extends StatelessWidget {
     final statusColor = status == 'Hadir'
         ? Colors.green
         : status == 'Izin'
-            ? Colors.orange
-            : Colors.red;
+        ? Colors.orange
+        : Colors.red;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -429,10 +551,7 @@ class _HistoryItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
                 Row(
                   children: [
@@ -452,11 +571,7 @@ class _HistoryItem extends StatelessWidget {
             ),
             child: Text(
               status,
-              style: TextStyle(
-                color: statusColor,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -470,20 +585,13 @@ class _ProfileInfoCard extends StatelessWidget {
   final String value;
   final IconData icon;
 
-  const _ProfileInfoCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-  });
+  const _ProfileInfoCard({required this.title, required this.value, required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8)),
       child: Row(
         children: [
           Icon(icon, color: Colors.blue),
@@ -491,15 +599,9 @@ class _ProfileInfoCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
+              Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
               const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-              ),
+              Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             ],
           ),
         ],
@@ -507,5 +609,3 @@ class _ProfileInfoCard extends StatelessWidget {
     );
   }
 }
-
-

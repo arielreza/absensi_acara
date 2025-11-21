@@ -1,27 +1,25 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 
-import 'firebase_options.dart'; // WAJIB dari flutterfire
-import 'services/auth_service.dart';
 import 'admin/admin_home.dart';
-import 'user/user_home.dart';
+import 'firebase_options.dart';
 import 'screens/login_screen.dart';
+import 'services/auth_service.dart';
+import 'user/user_home.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inisialisasi Firebase menggunakan konfigurasi flutterfire
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     print('Firebase initialized.');
   } catch (e) {
     print('Firebase init error: $e');
   }
 
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -34,10 +32,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Aplikasi Presensi QR Code',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          primarySwatch: Colors.blue,
-        ),
+        theme: ThemeData(useMaterial3: true, primarySwatch: Colors.blue),
         home: const AuthWrapper(),
       ),
     );
@@ -63,9 +58,7 @@ class AuthWrapper extends StatelessWidget {
       future: auth.getUserRole(user.uid),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
         final role = snapshot.data ?? 'user';
