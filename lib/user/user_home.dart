@@ -1,4 +1,4 @@
-import 'package:absensi_acara/user/service/event_register_service.dart';
+// import 'package:absensi_acara/user/service/event_register_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -187,7 +187,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 nim: nim,
               );
             }
-            return null;
+            return const SizedBox.shrink();
           },
         );
       },
@@ -196,9 +196,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   // ---------------- HISTORY TAB ---------------- //
   Widget _buildHistoryTab() {
-    return Center(
-      child: Text("Riwayat Presensi Akan Ditampilkan Di Sini"),
-    );
+    return Center(child: Text("Riwayat Presensi Akan Ditampilkan Di Sini"));
   }
 
   // ---------------- PROFILE TAB ---------------- //
@@ -225,24 +223,30 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 backgroundColor: Colors.blue,
                 child: const Icon(Icons.person, color: Colors.white, size: 40),
               ),
-              child: const Icon(Icons.person, size: 40, color: Colors.white),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              user?.email ?? 'User',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            const Text('Peserta', style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 24),
-            _ProfileInfoCard(title: 'Email', value: user?.email ?? '-', icon: Icons.email),
-            const SizedBox(height: 12),
-            _ProfileInfoCard(title: 'Role', value: 'Peserta', icon: Icons.badge),
-            const SizedBox(height: 12),
-            _ProfileInfoCard(title: 'Status', value: 'Aktif', icon: Icons.check_circle),
-          ],
-        ),
-      ),
+              const SizedBox(height: 16),
+
+              Text(
+                data['email'] ?? context.read<AuthService>().currentUser?.email ?? 'User',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 4),
+              const Text('Peserta', style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 24),
+
+              _ProfileInfoCard(title: 'Email', value: data['email'] ?? '-', icon: Icons.email),
+
+              const SizedBox(height: 12),
+
+              _ProfileInfoCard(title: 'Role', value: 'Peserta', icon: Icons.badge),
+
+              const SizedBox(height: 12),
+
+              _ProfileInfoCard(title: 'Status', value: 'Aktif', icon: Icons.check_circle),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -364,9 +368,9 @@ class _EventCard extends ConsumerWidget {
 
                 // ---------------------- FREE LABEL ----------------------
                 InkWell(
-                  onTap: () async {
-                    ref.read(eventRegisterService).daftarEvent(eventId: eventId, nimPeserta: nim);
-                  },
+                  // onTap: () async {
+                  //   ref.read(eventRegisterService).daftarEvent(eventId: eventId, nimPeserta: nim);
+                  // },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -388,111 +392,11 @@ class _EventCard extends ConsumerWidget {
               ],
             ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }
-
-// class _EventCard extends ConsumerWidget {
-//   final String eventId;
-//   final String title;
-//   final Timestamp date;
-//   final String location;
-//   // final String type;
-//   // final String status;
-//   final String nim;
-
-//   const _EventCard({
-//     super.key,
-//     required this.eventId,
-//     required this.title,
-//     required this.date,
-//     required this.location,
-//     // required this.type,
-//     // required this.status,
-//     required this.nim,
-//   });
-
-//   @override
-//   Widget build(BuildContext context, WidgetRef ref) {
-//     final dateTime = date.toDate(); // convert dari Timestamp
-//     final formattedDate = DateFormat('EEE, dd MMM yyyy • HH:mm').format(dateTime);
-//     final statusColor = Colors.green;
-//     final bgColor = Colors.green.shade50;
-
-//     return Container(
-//       padding: const EdgeInsets.all(12),
-//       decoration: BoxDecoration(
-//         color: bgColor,
-//         borderRadius: BorderRadius.circular(12),
-//         border: Border.all(color: statusColor.withOpacity(0.3)),
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Row(
-//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//             children: [
-//               Expanded(
-//                 child: Text(
-//                   title,
-//                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-//                   maxLines: 2,
-//                   overflow: TextOverflow.ellipsis,
-//                 ),
-//               ),
-//               InkWell(
-//                 onTap: () async {
-//                   ref.read(eventRegisterService).daftarEvent(eventId: eventId, nimPeserta: nim);
-//                 },
-//                 borderRadius: BorderRadius.circular(12),
-//                 child: Container(
-//                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-//                   decoration: BoxDecoration(
-//                     color: statusColor,
-//                     borderRadius: BorderRadius.circular(12),
-//                   ),
-//                   child: Text(
-//                     'Daftar',
-//                     style: const TextStyle(
-//                       color: Colors.white,
-//                       fontSize: 11,
-//                       fontWeight: FontWeight.bold,
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//             ],
-//           ),
-//           const SizedBox(height: 8),
-//           Row(
-//             children: [
-//               const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
-//               const SizedBox(width: 6),
-//               Text(formattedDate, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-//             ],
-//           ),
-//           const SizedBox(height: 4),
-//           Row(
-//             children: [
-//               const Icon(Icons.location_on, size: 14, color: Colors.grey),
-//               const SizedBox(width: 6),
-//               Expanded(
-//                 child: Text(
-//                   location,
-//                   style: const TextStyle(fontSize: 12, color: Colors.grey),
-//                   maxLines: 1,
-//                   overflow: TextOverflow.ellipsis,
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
 
 class _HistoryItem extends StatelessWidget {
   final String title;
@@ -578,10 +482,7 @@ class _ProfileInfoCard extends StatelessWidget {
             children: [
               Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
               const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-              ),
+              Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
             ],
           ),
         ],
