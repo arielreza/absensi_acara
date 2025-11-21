@@ -1,4 +1,4 @@
-// import 'package:absensi_acara/user/service/event_register_service.dart';
+import 'package:absensi_acara/user/service/event_register_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -88,7 +88,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   // ---------------- HOME TAB ---------------- //
   Widget _buildHomeTab() {
     final user = context.read<AuthService>().currentUser;
-    final nim = context.read<AuthService>().currentUser?.email ?? '';
+    // final nim = context.read<AuthService>().currentUser?.email ?? '';
 
     return SingleChildScrollView(
       child: Column(
@@ -142,7 +142,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                       title: data['event_name'] ?? '',
                       date: data['event_date'],
                       location: data['location'] ?? '',
-                      nim: nim,
+                      userId: user?.uid ?? '',
                     );
                   }
                   return const SizedBox.shrink();
@@ -157,7 +157,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   // ---------------- EVENT TAB ---------------- //
   Widget _buildEventTab() {
-    final nim = context.read<AuthService>().currentUser?.email ?? '';
+    final userId = context.read<AuthService>().currentUser?.uid ?? '';
+    // final nim = context.read<AuthService>().currentUser?.email ?? '';
 
     return StreamBuilder(
       stream: FirebaseFirestore.instance.collection('events').snapshots(),
@@ -184,7 +185,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 title: data['event_name'],
                 date: data['event_date'],
                 location: data['location'],
-                nim: nim,
+                userId: userId,
               );
             }
             return const SizedBox.shrink();
@@ -280,7 +281,7 @@ class _EventCard extends ConsumerWidget {
   final String title;
   final Timestamp date;
   final String location;
-  final String nim;
+  final String userId;
   // final String imageUrl;
 
   const _EventCard({
@@ -288,7 +289,7 @@ class _EventCard extends ConsumerWidget {
     required this.title,
     required this.date,
     required this.location,
-    required this.nim,
+    required this.userId,
     // required this.imageUrl,
   });
 
@@ -368,9 +369,9 @@ class _EventCard extends ConsumerWidget {
 
                 // ---------------------- FREE LABEL ----------------------
                 InkWell(
-                  // onTap: () async {
-                  //   ref.read(eventRegisterService).daftarEvent(eventId: eventId, nimPeserta: nim);
-                  // },
+                  onTap: () async {
+                    ref.read(eventRegisterService).daftarEvent(eventId: eventId, userId: userId);
+                  },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
