@@ -50,7 +50,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => _showLogoutDialog(context, auth),
-            tooltip: 'Logout',
           ),
         ],
       ),
@@ -86,6 +85,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     }
   }
 
+  // ---------------- HOME TAB ---------------- //
   Widget _buildHomeTab() {
     final user = context.read<AuthService>().currentUser;
     final nim = context.read<AuthService>().currentUser?.email ?? '';
@@ -108,22 +108,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _StatusBadge(label: 'Hadir', count: '0', icon: Icons.check_circle),
-                      _StatusBadge(label: 'Absen', count: '0', icon: Icons.cancel),
-                      _StatusBadge(label: 'Izin', count: '0', icon: Icons.help_center),
-                    ],
                   ),
                 ),
               ],
@@ -171,6 +155,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
+  // ---------------- EVENT TAB ---------------- //
   Widget _buildEventTab() {
     final nim = context.read<AuthService>().currentUser?.email ?? '';
 
@@ -209,47 +194,36 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
+  // ---------------- HISTORY TAB ---------------- //
   Widget _buildHistoryTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _HistoryItem(
-          title: 'Tech Conference 2024',
-          date: 'Mon, 24 Nov',
-          status: 'Hadir',
-          time: '10:15 AM',
-        ),
-        const Divider(),
-        _HistoryItem(
-          title: 'Workshop Mobile Development',
-          date: 'Sun, 23 Nov',
-          status: 'Absen',
-          time: '-',
-        ),
-        const Divider(),
-        _HistoryItem(
-          title: 'Seminar Flutter 2024',
-          date: 'Sat, 22 Nov',
-          status: 'Hadir',
-          time: '11:05 AM',
-        ),
-      ],
+    return Center(
+      child: Text("Riwayat Presensi Akan Ditampilkan Di Sini"),
     );
   }
 
+  // ---------------- PROFILE TAB ---------------- //
   Widget _buildProfileTab() {
-    final user = context.read<AuthService>().currentUser;
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                borderRadius: BorderRadius.circular(40),
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: context.read<AuthService>().getUserData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final data = snapshot.data;
+
+        if (data == null) {
+          return const Center(child: Text("Gagal memuat profil"));
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.blue,
+                child: const Icon(Icons.person, color: Colors.white, size: 40),
               ),
               child: const Icon(Icons.person, size: 40, color: Colors.white),
             ),
@@ -414,8 +388,8 @@ class _EventCard extends ConsumerWidget {
               ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -590,8 +564,11 @@ class _ProfileInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(8)),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Row(
         children: [
           Icon(icon, color: Colors.blue),
@@ -601,7 +578,10 @@ class _ProfileInfoCard extends StatelessWidget {
             children: [
               Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
               const SizedBox(height: 4),
-              Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              Text(
+                value,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
             ],
           ),
         ],

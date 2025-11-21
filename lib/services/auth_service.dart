@@ -5,10 +5,10 @@ import 'package:flutter/foundation.dart';
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   User? get currentUser => _auth.currentUser;
-  
-  /// Get user role from Firestore ('admin' or 'user')
+
+  /// Ambil role user dari Firestore
   Future<String?> getUserRole(String uid) async {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();
@@ -17,7 +17,21 @@ class AuthService extends ChangeNotifier {
       return null;
     }
   }
-  
+
+  /// Ambil seluruh data user: name, nim, email, role
+  Future<Map<String, dynamic>?> getUserData() async {
+    try {
+      final uid = _auth.currentUser?.uid;
+      if (uid == null) return null;
+
+      final doc = await _firestore.collection('users').doc(uid).get();
+      return doc.data();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// LOGIN
   Future<UserCredential?> signInWithEmail(String email, String password) async {
     try {
       final result = await _auth.signInWithEmailAndPassword(
@@ -29,7 +43,7 @@ class AuthService extends ChangeNotifier {
     } catch (e) {
       if (e is FirebaseAuthException) {
         if (e.code == 'user-not-found') {
-          throw 'Email tidak terdaftar sebagai operator';
+          throw 'Email tidak terdaftar';
         } else if (e.code == 'wrong-password') {
           throw 'Password salah';
         }
@@ -38,41 +52,49 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// LOGOUT
   Future<void> signOut() async {
     await _auth.signOut();
     notifyListeners();
   }
 
-  /// Register a new public user with email & password
-  Future<UserCredential?> registerWithEmail(String email, String password) async {
+  /// REGISTER (+ simpan name & nim)
+  Future<UserCredential?> registerUser({
+    required String name,
+    required String nim,
+    required String email,
+    required String password,
+  }) async {
     try {
       final result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
-      // Save user as 'user' role in Firestore
+
       if (result.user != null) {
-        await _firestore.collection('users').doc(result.user!.uid).set({
-          'email': email,
-          'role': 'user',
-          'createdAt': FieldValue.serverTimestamp(),
+        await _firestore.collection("users").doc(result.user!.uid).set({
+          "name": name,
+          "nim": nim,
+          "email": email,
+          "role": "user",
+          "createdAt": FieldValue.serverTimestamp(),
         });
       }
-      
+
       notifyListeners();
       return result;
+
     } catch (e) {
       if (e is FirebaseAuthException) {
-        if (e.code == 'email-already-in-use') {
-          throw 'Email sudah terdaftar';
-        } else if (e.code == 'invalid-email') {
-          throw 'Email tidak valid';
-        } else if (e.code == 'weak-password') {
-          throw 'Password terlalu lemah (minimal 6 karakter)';
+        if (e.code == "email-already-in-use") {
+          throw "Email sudah digunakan";
+        } else if (e.code == "invalid-email") {
+          throw "Email tidak valid";
+        } else if (e.code == "weak-password") {
+          throw "Password terlalu lemah";
         }
       }
-      throw 'Gagal mendaftar: ${e.toString()}';
+      throw "Gagal registrasi: ${e.toString()}";
     }
   }
 }
