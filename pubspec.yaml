@@ -60,6 +60,7 @@ dependencies:
   # QR Code scanning (if needed for event check-in)
   qr_flutter: ^4.1.0
   mobile_scanner: ^3.5.2
+  flutter_riverpod: ^3.0.3
 
 dev_dependencies:
   flutter_test:
