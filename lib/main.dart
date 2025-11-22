@@ -1,3 +1,4 @@
+import 'package:absensi_acara/user/screens/user_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +8,6 @@ import 'admin/admin_home.dart';
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'services/auth_service.dart';
-import 'user/user_home.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
