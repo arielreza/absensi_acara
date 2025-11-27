@@ -1,3 +1,4 @@
+import 'package:absensi_acara/user/screens/detail_history_screen.dart';
 import 'package:flutter/material.dart';
 
 class HistoryCard extends StatelessWidget {
@@ -5,6 +6,8 @@ class HistoryCard extends StatelessWidget {
   final String date;
   final String time;
   final String location;
+  final String eventId;
+  final String userId;
   // final String participants;
 
   const HistoryCard({
@@ -13,6 +16,8 @@ class HistoryCard extends StatelessWidget {
     required this.date,
     required this.time,
     required this.location,
+    required this.eventId,
+    required this.userId,
     // required this.participants,
   });
 
@@ -97,7 +102,14 @@ class HistoryCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DetailHistoryScreen(eventId: eventId, userId: userId),
+                  ),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6C4AFF),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
