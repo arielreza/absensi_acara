@@ -27,6 +27,16 @@ class User {
     );
   }
 
+  factory User.fromMap(Map<String, dynamic> map, String id) {
+    return User(
+      id: id,
+      email: map['email'] ?? '',
+      name: map['name'] ?? '',
+      nim: map['nim'] ?? '',
+      role: map['role'] ?? '',
+    );
+  }
+
   Map<String, dynamic> toFirestore() {
     return {'email': email, 'username': name, 'nim': nim, 'role': role};
   }

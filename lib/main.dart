@@ -1,3 +1,4 @@
+import 'package:absensi_acara/admin/admin_home.dart';
 import 'package:absensi_acara/user/screens/user_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -64,8 +65,8 @@ class AuthWrapper extends StatelessWidget {
 
         // Routing berdasarkan role
         if (role == 'admin') {
-          // return const AdminHomeScreen();
-          return const LoginScreen(); // sementara admin balik ke login
+          return const AdminHomeScreen();
+          // return const LoginScreen(); // sementara admin balik ke login
         } else {
           return const UserHomeScreen();
         }

@@ -1,3 +1,4 @@
+import 'package:absensi_acara/models/user.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -50,18 +51,14 @@ class DatabaseService {
   //   await db.insert('participants', participant.toMap());
   // }
 
-  // Future<Participant?> getParticipant(String id) async {
-  //   final db = await database;
-  //   final maps = await db.query(
-  //     'participants',
-  //     where: 'id = ?',
-  //     whereArgs: [id],
-  //   );
-  //   if (maps.isNotEmpty) {
-  //     return Participant.fromMap(maps.first);
-  //   }
-  //   return null;
-  // }
+  Future<User?> getParticipant(String id) async {
+    final db = await database;
+    final maps = await db.query('users', where: 'id = ?', whereArgs: [id]);
+    if (maps.isNotEmpty) {
+      return User.fromMap(maps.first, id);
+    }
+    return null;
+  }
 
   // Attendance CRUD
   Future<void> insertAttendance(Attendance attendance) async {
