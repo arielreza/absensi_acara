@@ -5,6 +5,8 @@ class Event {
   final String name;
   final Timestamp date;
   final String location;
+  final String organizer;
+  final String description;
   final bool isActive;
 
   Event({
@@ -13,6 +15,8 @@ class Event {
     required this.date,
     required this.location,
     required this.isActive,
+    required this.organizer,
+    required this.description,
   });
 
   factory Event.fromFirestore(DocumentSnapshot doc) {
@@ -24,6 +28,8 @@ class Event {
       date: data['event_date'] as Timestamp,
       location: data['location'] ?? '',
       isActive: data['is_active'] ?? false,
+      organizer: data['organizer'] ?? '',
+      description: data['description'] ?? '',
     );
   }
 
@@ -32,12 +38,21 @@ class Event {
       id: id,
       name: map['event_name'] ?? '',
       date: map['event_date'] ?? '',
-      location: '',
+      location: map['location'] ?? '',
       isActive: true,
+      organizer: map['organizer'] ?? '',
+      description: map['description'] ?? '',
     );
   }
 
   Map<String, dynamic> toFirestore() {
-    return {'event_name': name, 'event_date': date, 'location': location, 'is_active': isActive};
+    return {
+      'event_name': name,
+      'event_date': date,
+      'location': location,
+      'is_active': isActive,
+      'organizer': organizer,
+      'description': description,
+    };
   }
 }
