@@ -1,3 +1,4 @@
+import 'package:absensi_acara/models/event.dart';
 import 'package:absensi_acara/services/auth_service.dart';
 import 'package:absensi_acara/user/widgets/event_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -46,23 +47,23 @@ class HomeScreen extends StatelessWidget {
                 return const Center(child: Text("Tidak ada event"));
               }
 
-              final events = asyncSnapshot.data!.docs;
+              final docs = asyncSnapshot.data!.docs;
 
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
-                itemCount: events.length,
+                itemCount: docs.length,
                 itemBuilder: (context, index) {
-                  final doc = events[index];
-                  final data = doc.data();
+                  final doc = docs[index];
+                  final event = Event.fromFirestore(doc);
 
-                  if (data['is_active'] == true) {
+                  if (event.isActive == true) {
                     return EventCard(
-                      eventId: doc.id,
-                      title: data['event_name'] ?? '',
-                      date: data['event_date'],
-                      location: data['location'] ?? '',
+                      eventId: event.id,
+                      title: event.name,
+                      date: event.date,
+                      location: event.location,
                       userId: user?.uid ?? '',
                     );
                   }

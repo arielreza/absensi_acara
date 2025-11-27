@@ -1,6 +1,6 @@
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '../models/participant.dart';
+import 'package:sqflite/sqflite.dart';
+
 import '../models/attendance.dart';
 
 class DatabaseService {
@@ -18,11 +18,7 @@ class DatabaseService {
 
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'attendance.db');
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _createDatabase,
-    );
+    return await openDatabase(path, version: 1, onCreate: _createDatabase);
   }
 
   Future<void> _createDatabase(Database db, int version) async {
@@ -49,23 +45,23 @@ class DatabaseService {
   }
 
   // Participant CRUD
-  Future<void> insertParticipant(Participant participant) async {
-    final db = await database;
-    await db.insert('participants', participant.toMap());
-  }
+  // Future<void> insertParticipant(Participant participant) async {
+  //   final db = await database;
+  //   await db.insert('participants', participant.toMap());
+  // }
 
-  Future<Participant?> getParticipant(String id) async {
-    final db = await database;
-    final maps = await db.query(
-      'participants',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    if (maps.isNotEmpty) {
-      return Participant.fromMap(maps.first);
-    }
-    return null;
-  }
+  // Future<Participant?> getParticipant(String id) async {
+  //   final db = await database;
+  //   final maps = await db.query(
+  //     'participants',
+  //     where: 'id = ?',
+  //     whereArgs: [id],
+  //   );
+  //   if (maps.isNotEmpty) {
+  //     return Participant.fromMap(maps.first);
+  //   }
+  //   return null;
+  // }
 
   // Attendance CRUD
   Future<void> insertAttendance(Attendance attendance) async {

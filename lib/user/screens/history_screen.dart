@@ -1,13 +1,17 @@
+import 'package:absensi_acara/models/event.dart';
+import 'package:absensi_acara/services/auth_service.dart';
 import 'package:absensi_acara/user/widgets/history_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final userId = context.read<AuthService>().currentUser?.uid ?? '';
     return Scaffold(
       backgroundColor: const Color(0xFFFBFBFB),
       appBar: AppBar(
@@ -35,20 +39,20 @@ class HistoryScreen extends StatelessWidget {
             return const Center(child: Text("Kamu belum daftar event apapun"));
           }
 
-          final events = asyncSnapshot.data!.docs;
+          final docs = asyncSnapshot.data!.docs;
           return ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            itemCount: events.length,
+            itemCount: docs.length,
             itemBuilder: (context, index) {
-              final doc = events[index];
-              final data = doc.data();
+              final doc = docs[index];
+              final event = Event.fromFirestore(doc);
               return HistoryCard(
-                title: data['event_name'],
-                date: DateFormat("MMMM dd yyyy").format((data['event_date'] as Timestamp).toDate()),
-                time: DateFormat(
-                  "h.mm a – h.mm a",
-                ).format((data['event_date'] as Timestamp).toDate()),
-                location: data['location'],
+                title: event.name,
+                date: DateFormat("MMMM dd yyyy").format((event.date).toDate()),
+                time: DateFormat("h.mm a – h.mm a").format((event.date).toDate()),
+                location: event.location,
+                eventId: event.id,
+                userId: userId,
                 // participants: "127 Participant",
               );
             },

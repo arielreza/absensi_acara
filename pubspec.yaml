@@ -61,6 +61,7 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^3.5.2
   flutter_riverpod: ^3.0.3
+  rxdart: ^0.28.0
 
 dev_dependencies:
   flutter_test:

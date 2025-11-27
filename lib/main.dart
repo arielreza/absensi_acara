@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 
-import 'admin/admin_home.dart';
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'services/auth_service.dart';
@@ -65,7 +64,8 @@ class AuthWrapper extends StatelessWidget {
 
         // Routing berdasarkan role
         if (role == 'admin') {
-          return const AdminHomeScreen();
+          // return const AdminHomeScreen();
+          return const LoginScreen(); // sementara admin balik ke login
         } else {
           return const UserHomeScreen();
         }

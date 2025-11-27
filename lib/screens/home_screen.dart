@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,10 +16,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
+    _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _animController.forward();
   }
 
@@ -35,10 +33,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         title: const Text('Logout'),
         content: const Text('Apakah Anda yakin ingin keluar?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Batal'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
@@ -62,10 +57,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade300,
-              Colors.blue.shade50,
-            ],
+            colors: [Colors.blue.shade300, Colors.blue.shade50],
           ),
         ),
         child: SafeArea(
@@ -82,17 +74,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       children: [
                         Text(
                           'Halo,',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Colors.black54,
-                              ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(color: Colors.black54),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           user?.email ?? 'Operator',
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
                         ),
                       ],
                     ),
@@ -162,9 +154,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           children: [
                             Text(
                               'Presensi Terakhir',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                             ),
                             TextButton(
                               onPressed: () {
@@ -187,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   child: const Icon(Icons.person, color: Colors.black54),
                                 ),
                                 title: Text('Peserta ${index + 1}'),
-                                subtitle: Text('08:3${index} • Meja A'),
+                                subtitle: Text('08:3$index • Meja A'),
                                 trailing: const Icon(Icons.check_circle, color: Colors.green),
                                 onTap: () {},
                               );
