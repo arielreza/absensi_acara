@@ -12,67 +12,69 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = context.read<AuthService>().currentUser;
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            color: Colors.blue,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Halo,', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                const SizedBox(height: 4),
-                Text(
-                  user?.email ?? 'User',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+    return Material(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              color: Colors.blue,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Halo,', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Text(
+                    user?.email ?? 'User',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          StreamBuilder(
-            stream: FirebaseFirestore.instance.collection('events').snapshots(),
-            builder: (context, asyncSnapshot) {
-              if (asyncSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
+            const SizedBox(height: 16),
+            StreamBuilder(
+              stream: FirebaseFirestore.instance.collection('events').snapshots(),
+              builder: (context, asyncSnapshot) {
+                if (asyncSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              if (!asyncSnapshot.hasData || asyncSnapshot.data!.docs.isEmpty) {
-                return const Center(child: Text("Tidak ada event"));
-              }
+                if (!asyncSnapshot.hasData || asyncSnapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text("Tidak ada event"));
+                }
 
-              final docs = asyncSnapshot.data!.docs;
+                final docs = asyncSnapshot.data!.docs;
 
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                itemCount: docs.length,
-                itemBuilder: (context, index) {
-                  final doc = docs[index];
-                  final event = Event.fromFirestore(doc);
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = docs[index];
+                    final event = Event.fromFirestore(doc);
 
-                  if (event.isActive == true) {
-                    return EventCard(
-                      eventId: event.id,
-                      title: event.name,
-                      date: event.date,
-                      location: event.location,
-                      userId: user?.uid ?? '',
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              );
-            },
-          ),
-        ],
+                    if (event.isActive == true) {
+                      return EventCard(
+                        eventId: event.id,
+                        title: event.name,
+                        date: event.date,
+                        location: event.location,
+                        userId: user?.uid ?? '',
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
