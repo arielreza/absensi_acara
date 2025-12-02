@@ -10,98 +10,167 @@ class EditEventScreen extends StatefulWidget {
 }
 
 class _EditEventScreenState extends State<EditEventScreen> {
-  final _nameCtrl = TextEditingController();
-  final _descCtrl = TextEditingController();
-  final _locationCtrl = TextEditingController();
-  final _organizerCtrl = TextEditingController();
-  final _maxParticipantsCtrl = TextEditingController();
-  final _participantsCountCtrl = TextEditingController();
+  final TextEditingController nameC = TextEditingController();
+  final TextEditingController descC = TextEditingController();
+  final TextEditingController locationC = TextEditingController();
+  final TextEditingController organizerC = TextEditingController();
+  final TextEditingController quotaC = TextEditingController();
+  final TextEditingController participantsC = TextEditingController();
 
-  DateTime? _selectedDate;
+  DateTime? selectedDate;
+  bool isActive = false;
+
+  bool loading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadEventData();
+    loadEvent();
   }
 
-  Future<void> _loadEventData() async {
-    DocumentSnapshot doc = await FirebaseFirestore.instance
-        .collection("events")
-        .doc(widget.eventId)
-        .get();
+  Future<void> loadEvent() async {
+    final doc =
+        await FirebaseFirestore.instance.collection("events").doc(widget.eventId).get();
 
-    var data = doc.data() as Map<String, dynamic>;
+    final data = doc.data()!;
 
-    _nameCtrl.text = data["event_name"];
-    _descCtrl.text = data["description"];
-    _locationCtrl.text = data["location"];
-    _organizerCtrl.text = data["organizer"];
-    _maxParticipantsCtrl.text = data["max_participants"].toString();
-    _participantsCountCtrl.text = data["participants_count"].toString();
-    _selectedDate = (data["event_date"] as Timestamp).toDate();
+    nameC.text = data["event_name"] ?? "";
+    descC.text = data["description"] ?? "";
+    locationC.text = data["location"] ?? "";
+    organizerC.text = data["organizer"] ?? "";
 
-    setState(() {});
+    quotaC.text = (data["participants"] ?? 0).toString();
+    participantsC.text = (data["participants_count"] ?? 0).toString();
+
+    Timestamp ts = data["event_date"];
+    selectedDate = ts.toDate();
+
+    isActive = data["is_active"] ?? false;
+
+    setState(() => loading = false);
   }
 
-  Future<void> _updateEvent() async {
+  Future<void> updateEvent() async {
+    if (nameC.text.isEmpty ||
+        descC.text.isEmpty ||
+        locationC.text.isEmpty ||
+        organizerC.text.isEmpty ||
+        quotaC.text.isEmpty ||
+        participantsC.text.isEmpty ||
+        selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Semua field harus diisi")),
+      );
+      return;
+    }
+
+    int quota = int.tryParse(quotaC.text.trim()) ?? 0;
+    int participants = int.tryParse(participantsC.text.trim()) ?? 0;
+
     await FirebaseFirestore.instance.collection("events").doc(widget.eventId).update({
-      "event_name": _nameCtrl.text,
-      "description": _descCtrl.text,
-      "location": _locationCtrl.text,
-      "organizer": _organizerCtrl.text,
-      "event_date": Timestamp.fromDate(_selectedDate!),
-      "max_participants": int.parse(_maxParticipantsCtrl.text),
-      "participants_count": int.parse(_participantsCountCtrl.text),
+      "event_name": nameC.text,
+      "description": descC.text,
+      "location": locationC.text,
+      "organizer": organizerC.text,
+      "participants": quota,
+      "participants_count": participants,
+      "event_date": Timestamp.fromDate(selectedDate!),
+      "is_active": isActive,
     });
 
     Navigator.pop(context);
   }
 
+  Future<void> deleteEvent() async {
+    await FirebaseFirestore.instance.collection("events").doc(widget.eventId).delete();
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Edit Event")),
-      body: Padding(
+      appBar: AppBar(
+        title: const Text("Edit Event"),
+        backgroundColor: Colors.blueAccent,
+        foregroundColor: Colors.white,
+      ),
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: "Event Name")),
-              TextField(controller: _descCtrl, decoration: const InputDecoration(labelText: "Description")),
-              TextField(controller: _locationCtrl, decoration: const InputDecoration(labelText: "Location")),
-              TextField(controller: _organizerCtrl, decoration: const InputDecoration(labelText: "Organizer")),
-              TextField(controller: _maxParticipantsCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Max Participants")),
-              TextField(controller: _participantsCountCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: "Participants Count")),
-              const SizedBox(height: 16),
+        children: [
+          TextField(controller: nameC, decoration: const InputDecoration(labelText: "Event Name")),
+          TextField(controller: descC, maxLines: 2, decoration: const InputDecoration(labelText: "Description")),
+          TextField(controller: locationC, decoration: const InputDecoration(labelText: "Location")),
+          TextField(controller: organizerC, decoration: const InputDecoration(labelText: "Organizer")),
 
-              ElevatedButton(
-                onPressed: () async {
-                  DateTime? picked = await showDatePicker(
-                    context: context,
-                    initialDate: _selectedDate ?? DateTime.now(),
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2030),
-                  );
-                  if (picked != null) {
-                    setState(() => _selectedDate = picked);
-                  }
-                },
-                child: Text(
-                  _selectedDate == null
-                      ? "Select Event Date"
-                      : "Selected: ${_selectedDate!.toLocal()}".split(" ")[0],
-                ),
-              ),
-
-              const SizedBox(height: 25),
-              ElevatedButton(
-                onPressed: _updateEvent,
-                child: const Text("Update Event"),
-              ),
-            ],
+          // QUOTA
+          TextField(
+            controller: quotaC,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: "Participants Quota"),
           ),
-        ),
+
+          // PARTICIPANTS COUNT
+          TextField(
+            controller: participantsC,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: "Participants Count"),
+          ),
+
+          const SizedBox(height: 16),
+
+          ListTile(
+            title: Text("${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}"),
+            trailing: const Icon(Icons.calendar_month),
+            onTap: () async {
+              final pick = await showDatePicker(
+                context: context,
+                initialDate: selectedDate!,
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2030),
+              );
+
+              if (pick != null) {
+                setState(() => selectedDate = pick);
+              }
+            },
+          ),
+
+          SwitchListTile(
+            title: const Text("Active Event"),
+            subtitle: const Text("Tampilkan event di dashboard"),
+            value: isActive,
+            onChanged: (v) => setState(() => isActive = v),
+          ),
+
+          const SizedBox(height: 20),
+
+          ElevatedButton(
+            onPressed: updateEvent,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+            child: const Text("Update Event"),
+          ),
+
+          const SizedBox(height: 10),
+
+          // DELETE BUTTON
+          ElevatedButton(
+            onPressed: deleteEvent,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+            child: const Text("Delete Event"),
+          ),
+        ],
       ),
     );
   }
