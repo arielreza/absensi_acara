@@ -9,35 +9,60 @@ class AddEventScreen extends StatefulWidget {
 }
 
 class _AddEventScreenState extends State<AddEventScreen> {
-  final _nameCtrl = TextEditingController();
-  final _descCtrl = TextEditingController();
-  final _locationCtrl = TextEditingController();
-  final _organizerCtrl = TextEditingController();
-  final _maxParticipantsCtrl = TextEditingController();
+  final TextEditingController nameC = TextEditingController();
+  final TextEditingController descC = TextEditingController();
+  final TextEditingController locationC = TextEditingController();
+  final TextEditingController organizerC = TextEditingController();
+  final TextEditingController quotaC = TextEditingController();
 
-  DateTime? _selectedDate;
+  DateTime? selectedDate = DateTime.now();
+  bool isActive = true;
 
-  Future<void> _saveEvent() async {
-    if (_nameCtrl.text.isEmpty ||
-        _descCtrl.text.isEmpty ||
-        _maxParticipantsCtrl.text.isEmpty ||
-        _selectedDate == null) {
+  Future<void> pickDate() async {
+    final DateTime? result = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    if (result != null) {
+      setState(() {
+        selectedDate = result;
+      });
+    }
+  }
+
+  Future<void> saveEvent() async {
+    if (nameC.text.isEmpty ||
+        descC.text.isEmpty ||
+        locationC.text.isEmpty ||
+        organizerC.text.isEmpty ||
+        quotaC.text.isEmpty ||
+        selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all required fields")),
+        const SnackBar(content: Text("Harap lengkapi semua data")),
       );
       return;
     }
 
+    int quota = int.tryParse(quotaC.text.trim()) ?? 0;
+
     await FirebaseFirestore.instance.collection("events").add({
-      "event_name": _nameCtrl.text.trim(),
-      "description": _descCtrl.text.trim(),
-      "location": _locationCtrl.text.trim(),
-      "organizer": _organizerCtrl.text.trim(),
-      "event_date": Timestamp.fromDate(_selectedDate!),
-      "is_active": true,
-      "max_participants": int.parse(_maxParticipantsCtrl.text),
-      "participants_count": 0, // default saat buat event
+      "event_name": nameC.text,
+      "description": descC.text,
+      "location": locationC.text,
+      "organizer": organizerC.text,
+      "participants": quota,            // ✔ sama seperti EditEventScreen
+      "participants_count": 0,          // ✔ default
+      "event_date": Timestamp.fromDate(selectedDate!),
+      "is_active": isActive,
+      "created_at": Timestamp.now(),
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Event berhasil ditambahkan!")),
+    );
 
     Navigator.pop(context);
   }
@@ -47,60 +72,65 @@ class _AddEventScreenState extends State<AddEventScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Add Event"),
+        backgroundColor: Colors.blueAccent,
+        foregroundColor: Colors.white,
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: _nameCtrl,
-                decoration: const InputDecoration(labelText: "Event Name"),
-              ),
-              TextField(
-                controller: _descCtrl,
-                decoration: const InputDecoration(labelText: "Description"),
-              ),
-              TextField(
-                controller: _locationCtrl,
-                decoration: const InputDecoration(labelText: "Location"),
-              ),
-              TextField(
-                controller: _organizerCtrl,
-                decoration: const InputDecoration(labelText: "Organizer"),
-              ),
-              TextField(
-                controller: _maxParticipantsCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: "Max Participants"),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () async {
-                  DateTime? picked = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2030),
-                  );
-                  if (picked != null) {
-                    setState(() => _selectedDate = picked);
-                  }
-                },
-                child: Text(
-                  _selectedDate == null
-                      ? "Select Event Date"
-                      : "Selected: ${_selectedDate!.toLocal()}".split(" ")[0],
-                ),
-              ),
-              const SizedBox(height: 25),
-              ElevatedButton(
-                onPressed: _saveEvent,
-                child: const Text("Save Event"),
-              ),
-            ],
+        children: [
+          TextField(
+            controller: nameC,
+            decoration: const InputDecoration(labelText: "Event Name"),
           ),
-        ),
+          TextField(
+            controller: descC,
+            maxLines: 2,
+            decoration: const InputDecoration(labelText: "Description"),
+          ),
+          TextField(
+            controller: locationC,
+            decoration: const InputDecoration(labelText: "Location"),
+          ),
+          TextField(
+            controller: organizerC,
+            decoration: const InputDecoration(labelText: "Organizer"),
+          ),
+          TextField(
+            controller: quotaC,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: "Participants Quota"),
+          ),
+
+          const SizedBox(height: 16),
+
+          ListTile(
+            title: Text(
+              selectedDate == null
+                  ? "Pick Event Date"
+                  : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+            ),
+            trailing: const Icon(Icons.calendar_month),
+            onTap: pickDate,
+          ),
+
+          SwitchListTile(
+            title: const Text("Active Event"),
+            subtitle: const Text("Jika aktif, event akan tampil di dashboard"),
+            value: isActive,
+            onChanged: (v) => setState(() => isActive = v),
+          ),
+
+          const SizedBox(height: 20),
+
+          ElevatedButton(
+            onPressed: saveEvent,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+            child: const Text("Save Event"),
+          ),
+        ],
       ),
     );
   }
