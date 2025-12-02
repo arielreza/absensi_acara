@@ -273,6 +273,20 @@ Widget _activeEventsSection(BuildContext context) {
           final date = ts.toDate();
           final eventId = doc.id;
 
+          final int maxParticipants = data["max_participants"] ?? 0;
+          final int count = data["participants_count"] ?? 0;
+
+          final double progress =
+              maxParticipants == 0 ? 0 : count / maxParticipants;
+
+          // Badge FULL / AVAILABLE
+          final bool isFull = count >= maxParticipants && maxParticipants != 0;
+
+          final Color badgeColor =
+              isFull ? Colors.red : Colors.green.shade600;
+
+          final String badgeText = isFull ? "FULL" : "AVAILABLE";
+
           return Container(
             width: double.infinity,
             margin: const EdgeInsets.only(bottom: 20),
@@ -299,15 +313,40 @@ Widget _activeEventsSection(BuildContext context) {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Center(
-                    child: Text("Event Poster Placeholder", style: TextStyle(color: Colors.white)),
+                    child: Text("Event Poster Placeholder",
+                        style: TextStyle(color: Colors.white)),
                   ),
                 ),
 
                 const SizedBox(height: 12),
 
-                Text(
-                  data["event_name"] ?? "-",
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                // Title + Badge
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        data["event_name"] ?? "-",
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: badgeColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        badgeText,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11),
+                      ),
+                    )
+                  ],
                 ),
 
                 const SizedBox(height: 6),
@@ -317,18 +356,42 @@ Widget _activeEventsSection(BuildContext context) {
                   style: const TextStyle(color: Colors.black54),
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
 
+                // Participants text + number
                 Row(
-                  children: const [
-                    Icon(Icons.person, size: 16, color: Colors.blueGrey),
-                    SizedBox(width: 6),
-                    Text("Active Event"),
+                  children: [
+                    const Icon(Icons.people, size: 18, color: Colors.deepPurple),
+                    const SizedBox(width: 6),
+                    Text(
+                      "$count / $maxParticipants participants",
+                      style: const TextStyle(fontSize: 13),
+                    ),
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
+                // PROGRESS BAR
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: progress.clamp(0, 1),
+                    minHeight: 8,
+                    backgroundColor: Colors.grey.shade300,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      isFull
+                          ? Colors.red
+                          : progress > 0.8
+                              ? Colors.orange
+                              : Colors.green,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                // BUTTONS
                 Row(
                   children: [
                     Expanded(
@@ -355,7 +418,8 @@ Widget _activeEventsSection(BuildContext context) {
                     OutlinedButton(
                       onPressed: () {},
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -372,6 +436,7 @@ Widget _activeEventsSection(BuildContext context) {
     },
   );
 }
+
 
 
 
