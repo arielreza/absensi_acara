@@ -21,14 +21,15 @@ class DetailEventScreen extends ConsumerWidget {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Text("Loading...");
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         String status = "Daftar";
 
         if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
           final doc = snapshot.data!.docs.first;
-
           final userStatus = (doc['status'] ?? '').toString().toLowerCase();
 
           if (userStatus == "belum hadir") {
@@ -38,218 +39,467 @@ class DetailEventScreen extends ConsumerWidget {
           }
         }
 
-        final Color statusColor = (status == "Daftar") ? Colors.deepPurpleAccent : Colors.grey;
+        final Color statusColor = (status == "Daftar") ? const Color(0xFF594AFC) : Colors.grey;
         final parentContext = context;
 
         return StreamBuilder(
-          stream: FirebaseFirestore.instance.collection('events').snapshots(),
+          stream: FirebaseFirestore.instance
+              .collection('events')
+              .where(FieldPath.documentId, isEqualTo: eventId)
+              .snapshots(),
           builder: (context, asyncSnapshot) {
             if (asyncSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
             }
 
             if (!asyncSnapshot.hasData || asyncSnapshot.data!.docs.isEmpty) {
-              return const Center(child: Text("Tidak ada event"));
+              return const Scaffold(
+                body: Center(child: Text("Event tidak ditemukan")),
+              );
             }
 
-            final docs = asyncSnapshot.data!.docs;
+            final doc = asyncSnapshot.data!.docs.first;
+            final event = Event.fromFirestore(doc);
+
             return Scaffold(
-              backgroundColor: Colors.white,
-              body: Column(
+              backgroundColor: const Color(0xFFFAFAFA),
+              body: Stack(
                 children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back, size: 22),
-                      onPressed: () {},
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: docs.length,
-                      itemBuilder: (context, index) {
-                        final doc = docs[index];
-                        final event = Event.fromFirestore(doc);
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  // Main Content
+                  SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header Image with Icons
+                        Stack(
                           children: [
-                            Stack(
-                              children: [
-                                Image.asset(
-                                  'assets/header.png',
-                                  width: double.infinity,
-                                  height: 200,
-                                  fit: BoxFit.cover,
-                                ),
-                                Positioned(
-                                  top: 40,
-                                  left: 16,
-                                  child: Icon(Icons.arrow_back, color: Colors.black),
-                                ),
-                                Positioned(
-                                  top: 40,
-                                  right: 60,
-                                  child: Icon(Icons.share, color: Colors.black),
-                                ),
-                                Positioned(
-                                  top: 40,
-                                  right: 16,
-                                  child: Icon(Icons.favorite_border, color: Colors.black),
-                                ),
-                              ],
+                            // Event Image
+                            Container(
+                              width: double.infinity,
+                              height: 250,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFD9D9D9),
+                              ),
+                              child: Image.asset(
+                                'assets/header.png',
+                                width: double.infinity,
+                                height: 250,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: const Color(0xFFD9D9D9),
+                                    child: const Center(
+                                      child: Icon(Icons.image, size: 80, color: Colors.white),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    event.name,
-                                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
-                                      Text(event.location, style: TextStyle(color: Colors.blue)),
-                                      Text('• '),
-                                      Text('Kec. Klojen', style: TextStyle(color: Colors.blue)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-
-                                  Row(
-                                    children: [
-                                      CircleAvatar(radius: 14, backgroundColor: Colors.black12),
-                                      const SizedBox(width: 8),
-                                      Text(event.organizer),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(20),
-                                          border: Border.all(color: Colors.black26),
-                                        ),
-                                        child: Text('Follow'),
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 24),
-                                  Text(
-                                    'Overview',
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(event.description),
-                                  const SizedBox(height: 4),
-                                  Text('Readmore >', style: TextStyle(color: Colors.blue)),
-
-                                  const SizedBox(height: 24),
-                                  Text(
-                                    'Good to Know',
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 12),
-
-                                  Container(
-                                    padding: EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black12,
-                                          blurRadius: 6,
-                                          offset: Offset(0, 3),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Highlights',
-                                          style: TextStyle(fontWeight: FontWeight.bold),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Row(
-                                          children: [
-                                            Icon(Icons.calendar_today, size: 20),
-                                            SizedBox(width: 8),
-                                            Text('Next date 22/11'),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Row(
-                                          children: [
-                                            Icon(Icons.access_time, size: 20),
-                                            SizedBox(width: 8),
-                                            Text('2 Hours'),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Row(
-                                          children: [
-                                            Icon(Icons.location_on, size: 20),
-                                            SizedBox(width: 8),
-                                            Text('Auditorium Lantai 8 Jurusan Teknologi Informasi'),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 24),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Free',
-                                            style: TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          Text('Multiple dates'),
-                                        ],
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () async {
-                                          await ref
-                                              .read(eventRegisterService)
-                                              .daftarEvent(eventId: eventId, userId: userId);
-
-                                          Navigator.push(
-                                            // ignore: use_build_context_synchronously
-                                            parentContext,
-                                            MaterialPageRoute(
-                                              builder: (_) => const SuccessScreen(),
-                                            ),
-                                          );
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: statusColor,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 24,
-                                            vertical: 12,
-                                          ),
-                                        ),
-                                        child: Text(status, style: TextStyle(color: Colors.white)),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                            // Top Icons
+                            Positioned(
+                              top: 50,
+                              left: 16,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.arrow_back, color: Colors.black),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 50,
+                              right: 60,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.share, color: Colors.black),
+                                  onPressed: () {},
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 50,
+                              right: 8,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.favorite_border, color: Colors.black),
+                                  onPressed: () {},
+                                ),
                               ),
                             ),
                           ],
-                        );
-                      },
+                        ),
+
+                        // Event Title and Location
+                        Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                event.name,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black,
+                                  height: 1.3,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Text(
+                                    event.location,
+                                    style: const TextStyle(
+                                      color: Color(0xFF594AFC),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Container(
+                                    width: 5,
+                                    height: 5,
+                                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF594AFC),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const Text(
+                                    'Kec. Klojen',
+                                    style: TextStyle(
+                                      color: Color(0xFF594AFC),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Multiple dates',
+                                style: TextStyle(
+                                  color: Color(0xFF777777),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Organizer Section
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: Color(0x33CACACA)),
+                              bottom: BorderSide(color: Color(0x33CACACA)),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 25,
+                                backgroundColor: const Color(0xFFD9D9D9),
+                                child: Text(
+                                  event.organizer[0].toUpperCase(),
+                                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text.rich(
+                                      TextSpan(
+                                        children: [
+                                          const TextSpan(
+                                            text: 'By ',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                          TextSpan(
+                                            text: event.organizer,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    const Text(
+                                      '1227 followers',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF777777),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: Colors.black),
+                                ),
+                                child: const Text(
+                                  'Follow',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Overview Section
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(color: Color(0x33CACACA)),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Overview',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                event.description,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black,
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Row(
+                                children: [
+                                  Text(
+                                    'Readmore',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF777777),
+                                    ),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Icon(
+                                    Icons.keyboard_arrow_down,
+                                    size: 16,
+                                    color: Color(0xFF777777),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Good to Know Section
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Good to Know',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x19000000),
+                                      blurRadius: 6,
+                                      offset: Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Highlights',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 15),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today, size: 14),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Next date ${event.date}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    const Row(
+                                      children: [
+                                        Icon(Icons.access_time, size: 14),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          '2 hours',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Icon(Icons.location_on, size: 14),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            event.location,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 100),
+                      ],
+                    ),
+                  ),
+
+                  // Bottom Button
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x19000000),
+                            blurRadius: 15,
+                            offset: Offset(0, -2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Free',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              Text(
+                                'Multiple dates',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                          ElevatedButton(
+                            onPressed: status == "Daftar"
+                                ? () async {
+                                    await ref
+                                        .read(eventRegisterService)
+                                        .daftarEvent(eventId: eventId, userId: userId);
+
+                                    Navigator.push(
+                                      // ignore: use_build_context_synchronously
+                                      parentContext,
+                                      MaterialPageRoute(
+                                        builder: (_) => const SuccessScreen(),
+                                      ),
+                                    );
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: statusColor,
+                              disabledBackgroundColor: Colors.grey,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 14,
+                              ),
+                              elevation: 5,
+                              shadowColor: const Color(0x11000000),
+                            ),
+                            child: Text(
+                              status,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
