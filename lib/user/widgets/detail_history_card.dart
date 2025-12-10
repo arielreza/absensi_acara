@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:absensi_acara/models/absence.dart';
 import 'package:absensi_acara/models/event.dart';
 import 'package:absensi_acara/models/user.dart';
@@ -26,6 +28,27 @@ class DetailHistoryCard extends StatelessWidget {
     final eventDateTime = (event.date as dynamic).toDate() as DateTime;
     final timeFormat = DateFormat('HH:mm').format(eventDateTime);
     final dateFormat = DateFormat('EEEE, dd MMMM yyyy').format(eventDateTime);
+
+    // Test apakah JSON yang dihasilkan valid
+    Widget buildQrCodeWithDebug() {
+      final qrData = jsonEncode({"user_id": user.id.toString(), "event_id": event.id.toString()});
+
+      print('QR Data: $qrData'); // Cek di console
+
+      return Column(
+        children: [
+          QrImageView(
+            data: absence.id,
+            version: QrVersions.auto,
+            size: 180,
+            backgroundColor: Colors.white,
+            errorCorrectionLevel: QrErrorCorrectLevel.H,
+          ),
+          const SizedBox(height: 10),
+          Text('Data: $qrData', style: const TextStyle(fontSize: 10)),
+        ],
+      );
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
@@ -137,7 +160,12 @@ class DetailHistoryCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                QrImageView(data: absence.id, version: QrVersions.auto, size: 180),
+                buildQrCodeWithDebug(),
+                // QrImageView(
+                //   data: jsonEncode({"user_id": user.id, "event_id": event.id}),
+                //   version: QrVersions.auto,
+                //   size: 180,
+                // ),
               ],
             ),
           ),
