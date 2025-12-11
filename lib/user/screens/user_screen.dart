@@ -1,5 +1,4 @@
 import 'package:absensi_acara/services/auth_service.dart';
-import 'package:absensi_acara/user/screens/event_screen.dart';
 import 'package:absensi_acara/user/screens/history_screen.dart';
 import 'package:absensi_acara/user/screens/home_screen.dart';
 import 'package:absensi_acara/user/screens/profile_screen.dart';
@@ -47,7 +46,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Event'),
+          // BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Event'),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
@@ -62,11 +61,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     switch (_selectedTab) {
       case 0:
         return HomeScreen();
+      // case 1:
+      //   return EventScreen();
       case 1:
-        return EventScreen();
-      case 2:
         return HistoryScreen();
-      case 3:
+      case 2:
         return ProfileScreen();
       default:
         return HomeScreen();

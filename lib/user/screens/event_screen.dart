@@ -32,18 +32,18 @@ class EventScreen extends StatelessWidget {
           itemBuilder: (context, index) {
             final doc = docs[index];
             final event = Event.fromFirestore(doc);
+            // final imageUrl = event. as String?;
 
             if (event.isActive == true) {
               return EventCard(
+                event: event,
                 eventId: event.id,
-                title: event.name,
-                date: event.date,
-                location: event.location,
+                imageUrl: event.name,
                 userId: userId,
                 imageUrl: event.imageUrl, // PASS IMAGE URL
               );
             }
-            return const SizedBox.shrink();
+            return const SizedBox(height: 15);
           },
         );
       },

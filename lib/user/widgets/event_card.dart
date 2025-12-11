@@ -1,47 +1,46 @@
-// lib/user/widgets/event_card.dart
-
+import 'package:absensi_acara/models/event.dart';
 import 'package:absensi_acara/user/screens/detail_event_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 class EventCard extends ConsumerWidget {
+  final Event event;
   final String eventId;
-  final String title;
-  final Timestamp date;
-  final String location;
+  final String? imageUrl;
   final String userId;
   final String imageUrl; // BARU: Tambah parameter image
 
   const EventCard({
     super.key,
+    required this.event,
     required this.eventId,
-    required this.title,
-    required this.date,
-    required this.location,
+    required this.imageUrl,
     required this.userId,
     this.imageUrl = '', // Default kosong
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final eventDate = date.toDate();
-    final dateFormatted = DateFormat("EEE, dd MMM yyyy").format(eventDate);
-    final timeFormatted = DateFormat("HH:mm").format(eventDate);
+    DateTime eventDate = (event.date).toDate();
 
-    return Material(
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DetailEventScreen(eventId: eventId, userId: userId),
+          ),
+        );
+      },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
+        width: 284,
+        margin: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(color: Color(0x19000000), blurRadius: 6, offset: Offset(0, 0)),
           ],
         ),
         child: Column(
@@ -80,7 +79,7 @@ class EventCard extends ConsumerWidget {
 
             // ===================== CONTENT SECTION =====================
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -114,12 +113,12 @@ class EventCard extends ConsumerWidget {
                     ],
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
 
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 14, color: Colors.grey),
-                      const SizedBox(width: 6),
+                      const Icon(Icons.location_on, size: 14, color: Color(0xFF777777)),
+                      const SizedBox(width: 5),
                       Expanded(
                         child: Text(
                           location,
@@ -173,6 +172,8 @@ class EventCard extends ConsumerWidget {
                 ],
               ),
             ),
+
+            const SizedBox(height: 10),
           ],
         ),
       ),
