@@ -9,6 +9,7 @@ class EventCard extends ConsumerWidget {
   final String eventId;
   final String? imageUrl;
   final String userId;
+  final String imageUrl; // BARU: Tambah parameter image
 
   const EventCard({
     super.key,
@@ -16,6 +17,7 @@ class EventCard extends ConsumerWidget {
     required this.eventId,
     required this.imageUrl,
     required this.userId,
+    this.imageUrl = '', // Default kosong
   });
 
   @override
@@ -44,69 +46,68 @@ class EventCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Event Image
-            Container(
-              height: 135,
-              margin: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFD9D9D9),
-                borderRadius: BorderRadius.circular(20),
-                image: imageUrl != null && imageUrl!.isNotEmpty
-                    ? DecorationImage(image: NetworkImage(imageUrl!), fit: BoxFit.cover)
-                    : null,
+            // ===================== IMAGE SECTION =====================
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
               ),
-              child: (imageUrl == null || imageUrl!.isEmpty)
-                  ? const Center(child: Icon(Icons.event, size: 40, color: Colors.white54))
-                  : null,
+              child: imageUrl.isNotEmpty
+                  ? Image.network(
+                      imageUrl,
+                      height: 160,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          height: 160,
+                          color: Colors.grey[200],
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF594AFC),
+                            ),
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return _buildPlaceholderImage();
+                      },
+                    )
+                  : _buildPlaceholderImage(),
             ),
 
-            // Event Details
+            // ===================== CONTENT SECTION =====================
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    event.name,
+                    title,
                     style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Poppins',
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+
+                  const SizedBox(height: 8),
 
                   Row(
                     children: [
-                      Text(
-                        _formatDate(eventDate),
-                        style: const TextStyle(
-                          color: Color(0xFF594AFC),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Container(
-                        width: 3,
-                        height: 3,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF594AFC),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Flexible(
+                      const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
+                      const SizedBox(width: 6),
+                      Expanded(
                         child: Text(
-                          _formatTime(eventDate),
+                          "$dateFormatted   •   $timeFormatted",
                           style: const TextStyle(
-                            color: Color(0xFF594AFC),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                            color: Colors.grey,
+                            fontFamily: 'Poppins',
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -120,11 +121,11 @@ class EventCard extends ConsumerWidget {
                       const SizedBox(width: 5),
                       Expanded(
                         child: Text(
-                          event.location,
+                          location,
                           style: const TextStyle(
-                            color: Color(0xFF777777),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
+                            fontSize: 13,
+                            color: Colors.grey,
+                            fontFamily: 'Poppins',
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -132,6 +133,42 @@ class EventCard extends ConsumerWidget {
                       ),
                     ],
                   ),
+
+                  const SizedBox(height: 12),
+
+                  // ===================== BUTTON =====================
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DetailEventScreen(
+                            eventId: eventId,
+                            userId: userId,
+                          ),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF594AFC),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'View Details',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
@@ -142,13 +179,29 @@ class EventCard extends ConsumerWidget {
       ),
     );
   }
-}
 
-// --- Helper ---
-String _formatDate(DateTime date) {
-  return DateFormat('d MMM yyyy', 'id_ID').format(date);
-}
-
-String _formatTime(DateTime date) {
-  return DateFormat('HH:mm').format(date);
+  // Widget placeholder jika tidak ada gambar
+  Widget _buildPlaceholderImage() {
+    return Container(
+      height: 160,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF594AFC).withOpacity(0.7),
+            const Color(0xFF594AFC).withOpacity(0.4),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: const Center(
+        child: Icon(
+          Icons.event,
+          size: 60,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
 }

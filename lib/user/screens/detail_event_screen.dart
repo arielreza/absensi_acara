@@ -1,3 +1,5 @@
+// lib/user/screens/detail_event_screen.dart
+
 import 'package:absensi_acara/models/event.dart';
 import 'package:absensi_acara/user/screens/success_screen.dart';
 import 'package:absensi_acara/user/service/event_register_service.dart';
@@ -72,31 +74,57 @@ class DetailEventScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header Image with Icons
+                        // ===================== HEADER IMAGE =====================
                         Stack(
                           children: [
-                            // Event Image
+                            // Event Image dari Cloudinary atau Placeholder
                             Container(
                               width: double.infinity,
-                              height: 250,
+                              height: 300,
                               decoration: const BoxDecoration(
                                 color: Color(0xFFD9D9D9),
                               ),
-                              child: Image.asset(
-                                'assets/header.png',
-                                width: double.infinity,
-                                height: 250,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    color: const Color(0xFFD9D9D9),
-                                    child: const Center(
-                                      child: Icon(Icons.image, size: 80, color: Colors.white),
-                                    ),
-                                  );
-                                },
+                              child: event.imageUrl.isNotEmpty
+                                  ? Image.network(
+                                      event.imageUrl,
+                                      width: double.infinity,
+                                      height: 300,
+                                      fit: BoxFit.cover,
+                                      loadingBuilder: (context, child, loadingProgress) {
+                                        if (loadingProgress == null) return child;
+                                        return Container(
+                                          color: const Color(0xFFD9D9D9),
+                                          child: const Center(
+                                            child: CircularProgressIndicator(
+                                              color: Color(0xFF594AFC),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return _buildPlaceholderImage();
+                                      },
+                                    )
+                                  : _buildPlaceholderImage(),
+                            ),
+                            
+                            // Gradient Overlay untuk readability
+                            Container(
+                              width: double.infinity,
+                              height: 300,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.black.withOpacity(0.3),
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.5),
+                                  ],
+                                ),
                               ),
                             ),
+                            
                             // Top Icons
                             Positioned(
                               top: 50,
@@ -156,6 +184,7 @@ class DetailEventScreen extends ConsumerWidget {
                                   fontWeight: FontWeight.w600,
                                   color: Colors.black,
                                   height: 1.3,
+                                  fontFamily: 'Poppins',
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -166,6 +195,7 @@ class DetailEventScreen extends ConsumerWidget {
                                     style: const TextStyle(
                                       color: Color(0xFF594AFC),
                                       fontSize: 14,
+                                      fontFamily: 'Poppins',
                                     ),
                                   ),
                                   Container(
@@ -182,6 +212,7 @@ class DetailEventScreen extends ConsumerWidget {
                                     style: TextStyle(
                                       color: Color(0xFF594AFC),
                                       fontSize: 14,
+                                      fontFamily: 'Poppins',
                                     ),
                                   ),
                                 ],
@@ -192,6 +223,7 @@ class DetailEventScreen extends ConsumerWidget {
                                 style: TextStyle(
                                   color: Color(0xFF777777),
                                   fontSize: 14,
+                                  fontFamily: 'Poppins',
                                 ),
                               ),
                             ],
@@ -215,7 +247,11 @@ class DetailEventScreen extends ConsumerWidget {
                                 backgroundColor: const Color(0xFFD9D9D9),
                                 child: Text(
                                   event.organizer[0].toUpperCase(),
-                                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Poppins',
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -231,6 +267,7 @@ class DetailEventScreen extends ConsumerWidget {
                                             style: TextStyle(
                                               fontSize: 14,
                                               color: Colors.black,
+                                              fontFamily: 'Poppins',
                                             ),
                                           ),
                                           TextSpan(
@@ -239,6 +276,7 @@ class DetailEventScreen extends ConsumerWidget {
                                               fontSize: 14,
                                               fontWeight: FontWeight.w500,
                                               color: Colors.black,
+                                              fontFamily: 'Poppins',
                                             ),
                                           ),
                                         ],
@@ -250,6 +288,7 @@ class DetailEventScreen extends ConsumerWidget {
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Color(0xFF777777),
+                                        fontFamily: 'Poppins',
                                       ),
                                     ),
                                   ],
@@ -263,7 +302,10 @@ class DetailEventScreen extends ConsumerWidget {
                                 ),
                                 child: const Text(
                                   'Follow',
-                                  style: TextStyle(fontSize: 12),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: 'Poppins',
+                                  ),
                                 ),
                               ),
                             ],
@@ -288,6 +330,7 @@ class DetailEventScreen extends ConsumerWidget {
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
                                   color: Colors.black,
+                                  fontFamily: 'Poppins',
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -297,16 +340,18 @@ class DetailEventScreen extends ConsumerWidget {
                                   fontSize: 14,
                                   color: Colors.black,
                                   height: 1.5,
+                                  fontFamily: 'Poppins',
                                 ),
                               ),
                               const SizedBox(height: 8),
                               const Row(
                                 children: [
                                   Text(
-                                    'Readmore',
+                                    'Read more',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Color(0xFF777777),
+                                      fontFamily: 'Poppins',
                                     ),
                                   ),
                                   SizedBox(width: 4),
@@ -333,6 +378,7 @@ class DetailEventScreen extends ConsumerWidget {
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
                                   color: Colors.black,
+                                  fontFamily: 'Poppins',
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -359,6 +405,7 @@ class DetailEventScreen extends ConsumerWidget {
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
                                         color: Colors.black,
+                                        fontFamily: 'Poppins',
                                       ),
                                     ),
                                     const SizedBox(height: 15),
@@ -371,6 +418,7 @@ class DetailEventScreen extends ConsumerWidget {
                                           style: const TextStyle(
                                             fontSize: 12,
                                             color: Colors.black,
+                                            fontFamily: 'Poppins',
                                           ),
                                         ),
                                       ],
@@ -385,6 +433,7 @@ class DetailEventScreen extends ConsumerWidget {
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: Colors.black,
+                                            fontFamily: 'Poppins',
                                           ),
                                         ),
                                       ],
@@ -401,6 +450,7 @@ class DetailEventScreen extends ConsumerWidget {
                                             style: const TextStyle(
                                               fontSize: 12,
                                               color: Colors.black,
+                                              fontFamily: 'Poppins',
                                             ),
                                           ),
                                         ),
@@ -449,6 +499,7 @@ class DetailEventScreen extends ConsumerWidget {
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.black,
+                                  fontFamily: 'Poppins',
                                 ),
                               ),
                               Text(
@@ -456,6 +507,7 @@ class DetailEventScreen extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.black,
+                                  fontFamily: 'Poppins',
                                 ),
                               ),
                             ],
@@ -468,7 +520,6 @@ class DetailEventScreen extends ConsumerWidget {
                                         .daftarEvent(eventId: eventId, userId: userId);
 
                                     Navigator.push(
-                                      // ignore: use_build_context_synchronously
                                       parentContext,
                                       MaterialPageRoute(
                                         builder: (_) => const SuccessScreen(),
@@ -495,6 +546,7 @@ class DetailEventScreen extends ConsumerWidget {
                                 color: Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
+                                fontFamily: 'Poppins',
                               ),
                             ),
                           ),
@@ -508,6 +560,16 @@ class DetailEventScreen extends ConsumerWidget {
           },
         );
       },
+    );
+  }
+
+  // Placeholder jika tidak ada gambar
+  Widget _buildPlaceholderImage() {
+    return Container(
+      color: const Color(0xFFD9D9D9),
+      child: const Center(
+        child: Icon(Icons.image, size: 80, color: Colors.white),
+      ),
     );
   }
 }

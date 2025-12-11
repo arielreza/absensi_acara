@@ -1,3 +1,5 @@
+// lib/models/event.dart
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Event {
@@ -8,6 +10,8 @@ class Event {
   final String organizer;
   final String description;
   final bool isActive;
+  final String imageUrl;        // BARU: URL gambar dari Cloudinary
+  final String imagePublicId;   // BARU: Public ID untuk referensi
 
   Event({
     required this.id,
@@ -17,6 +21,8 @@ class Event {
     required this.isActive,
     required this.organizer,
     required this.description,
+    this.imageUrl = '',           // Default kosong jika tidak ada gambar
+    this.imagePublicId = '',      // Default kosong
   });
 
   factory Event.fromFirestore(DocumentSnapshot doc) {
@@ -30,6 +36,8 @@ class Event {
       isActive: data['is_active'] ?? false,
       organizer: data['organizer'] ?? '',
       description: data['description'] ?? '',
+      imageUrl: data['image_url'] ?? '',           // BARU
+      imagePublicId: data['image_public_id'] ?? '', // BARU
     );
   }
 
@@ -42,6 +50,8 @@ class Event {
       isActive: true,
       organizer: map['organizer'] ?? '',
       description: map['description'] ?? '',
+      imageUrl: map['image_url'] ?? '',           // BARU
+      imagePublicId: map['image_public_id'] ?? '', // BARU
     );
   }
 
@@ -53,6 +63,8 @@ class Event {
       'is_active': isActive,
       'organizer': organizer,
       'description': description,
+      'image_url': imageUrl,           // BARU
+      'image_public_id': imagePublicId, // BARU
     };
   }
 }
