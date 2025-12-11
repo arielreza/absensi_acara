@@ -38,7 +38,6 @@ class EventScreen extends StatelessWidget {
               return EventCard(
                 event: event,
                 eventId: event.id,
-                imageUrl: event.name,
                 userId: userId,
                 imageUrl: event.imageUrl, // PASS IMAGE URL
               );

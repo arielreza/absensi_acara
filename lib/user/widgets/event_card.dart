@@ -7,22 +7,22 @@ import 'package:intl/intl.dart';
 class EventCard extends ConsumerWidget {
   final Event event;
   final String eventId;
-  final String? imageUrl;
   final String userId;
-  final String imageUrl; // BARU: Tambah parameter image
 
   const EventCard({
     super.key,
     required this.event,
     required this.eventId,
-    required this.imageUrl,
     required this.userId,
-    this.imageUrl = '', // Default kosong
+    String? imageUrl,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    DateTime eventDate = (event.date).toDate();
+    final DateTime eventDate = event.date.toDate();
+
+    final String dateFormatted = _formatDate(eventDate);
+    final String timeFormatted = _formatTime(eventDate);
 
     return GestureDetector(
       onTap: () {
@@ -52,9 +52,9 @@ class EventCard extends ConsumerWidget {
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
               ),
-              child: imageUrl.isNotEmpty
+              child: (event.imageUrl.isNotEmpty)
                   ? Image.network(
-                      imageUrl,
+                      event.imageUrl,
                       height: 160,
                       width: double.infinity,
                       fit: BoxFit.cover,
@@ -64,9 +64,7 @@ class EventCard extends ConsumerWidget {
                           height: 160,
                           color: Colors.grey[200],
                           child: const Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0xFF594AFC),
-                            ),
+                            child: CircularProgressIndicator(color: Color(0xFF594AFC)),
                           ),
                         );
                       },
@@ -83,8 +81,9 @@ class EventCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Event Title
                   Text(
-                    title,
+                    event.name,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -96,6 +95,7 @@ class EventCard extends ConsumerWidget {
 
                   const SizedBox(height: 8),
 
+                  // Date & Time
                   Row(
                     children: [
                       const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
@@ -115,13 +115,14 @@ class EventCard extends ConsumerWidget {
 
                   const SizedBox(height: 4),
 
+                  // Location
                   Row(
                     children: [
                       const Icon(Icons.location_on, size: 14, color: Color(0xFF777777)),
                       const SizedBox(width: 5),
                       Expanded(
                         child: Text(
-                          location,
+                          event.location,
                           style: const TextStyle(
                             fontSize: 13,
                             color: Colors.grey,
@@ -142,10 +143,7 @@ class EventCard extends ConsumerWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => DetailEventScreen(
-                            eventId: eventId,
-                            userId: userId,
-                          ),
+                          builder: (_) => DetailEventScreen(eventId: eventId, userId: userId),
                         ),
                       );
                     },
@@ -180,7 +178,7 @@ class EventCard extends ConsumerWidget {
     );
   }
 
-  // Widget placeholder jika tidak ada gambar
+  // Placeholder image
   Widget _buildPlaceholderImage() {
     return Container(
       height: 160,
@@ -195,13 +193,15 @@ class EventCard extends ConsumerWidget {
           end: Alignment.bottomRight,
         ),
       ),
-      child: const Center(
-        child: Icon(
-          Icons.event,
-          size: 60,
-          color: Colors.white,
-        ),
-      ),
+      child: const Center(child: Icon(Icons.event, size: 60, color: Colors.white)),
     );
   }
+}
+
+String _formatDate(DateTime date) {
+  return DateFormat('d MMM yyyy', 'id_ID').format(date);
+}
+
+String _formatTime(DateTime date) {
+  return DateFormat('HH:mm').format(date);
 }
