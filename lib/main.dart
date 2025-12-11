@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
+import 'screens/splash_screen.dart';
 import 'services/auth_service.dart';
 
 void main() async {
@@ -33,7 +34,7 @@ class MyApp extends StatelessWidget {
         title: 'Aplikasi Presensi QR Code',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(useMaterial3: true, primarySwatch: Colors.blue, fontFamily: 'Poppins'),
-        home: const AuthWrapper(),
+        home: const SplashScreen(),
       ),
     );
   }
@@ -66,7 +67,6 @@ class AuthWrapper extends StatelessWidget {
         // Routing berdasarkan role
         if (role == 'admin') {
           return const AdminHomeScreen();
-          // return const LoginScreen(); // sementara admin balik ke login
         } else {
           return const UserHomeScreen();
         }
