@@ -1,3 +1,5 @@
+// lib/user/widgets/event_card.dart
+
 import 'package:absensi_acara/user/screens/detail_event_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +12,7 @@ class EventCard extends ConsumerWidget {
   final Timestamp date;
   final String location;
   final String userId;
+  final String imageUrl; // BARU: Tambah parameter image
 
   const EventCard({
     super.key,
@@ -18,6 +21,7 @@ class EventCard extends ConsumerWidget {
     required this.date,
     required this.location,
     required this.userId,
+    this.imageUrl = '', // Default kosong
   });
 
   @override
@@ -43,15 +47,53 @@ class EventCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ---------------------- IMAGE ----------------------
-            SizedBox(height: 160),
+            // ===================== IMAGE SECTION =====================
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+              child: imageUrl.isNotEmpty
+                  ? Image.network(
+                      imageUrl,
+                      height: 160,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          height: 160,
+                          color: Colors.grey[200],
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF594AFC),
+                            ),
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return _buildPlaceholderImage();
+                      },
+                    )
+                  : _buildPlaceholderImage(),
+            ),
 
+            // ===================== CONTENT SECTION =====================
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Poppins',
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
 
                   const SizedBox(height: 8),
 
@@ -59,9 +101,15 @@ class EventCard extends ConsumerWidget {
                     children: [
                       const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
                       const SizedBox(width: 6),
-                      Text(
-                        "$dateFormatted   •   $timeFormatted",
-                        style: const TextStyle(fontSize: 13, color: Colors.grey),
+                      Expanded(
+                        child: Text(
+                          "$dateFormatted   •   $timeFormatted",
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -75,7 +123,13 @@ class EventCard extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           location,
-                          style: const TextStyle(fontSize: 13, color: Colors.grey),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                            fontFamily: 'Poppins',
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -83,30 +137,33 @@ class EventCard extends ConsumerWidget {
 
                   const SizedBox(height: 12),
 
-                  // ---------------------- BUTTON ----------------------
+                  // ===================== BUTTON =====================
                   InkWell(
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => DetailEventScreen(eventId: eventId, userId: userId),
+                          builder: (_) => DetailEventScreen(
+                            eventId: eventId,
+                            userId: userId,
+                          ),
                         ),
                       );
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.deepPurpleAccent,
+                        color: const Color(0xFF594AFC),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Text(
-                        // status,
-                        'Detail',
-                        style: const TextStyle(
+                      child: const Text(
+                        'View Details',
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Poppins',
                         ),
                       ),
                     ),
@@ -117,6 +174,31 @@ class EventCard extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // Widget placeholder jika tidak ada gambar
+  Widget _buildPlaceholderImage() {
+    return Container(
+      height: 160,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF594AFC).withOpacity(0.7),
+            const Color(0xFF594AFC).withOpacity(0.4),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: const Center(
+        child: Icon(
+          Icons.event,
+          size: 60,
+          color: Colors.white,
         ),
       ),
     );

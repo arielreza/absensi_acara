@@ -1,3 +1,5 @@
+// lib/admin/event_management_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -24,12 +26,10 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
 
   // Filter States
   String searchQuery = '';
-  DateTime? _filterDate;       // Filter Tanggal Spesifik
-  DateTime? _filterMonth;      // Filter Bulan (Dipakai jika _filterDate null)
-  String _filterCategory = 'All'; // Filter Kategori
-  
-  // Opsi tambahan (Opsional, bisa diaktifkan jika perlu)
-  String _filterTimeStatus = 'All'; 
+  DateTime? _filterDate;
+  DateTime? _filterMonth;
+  String _filterCategory = 'All';
+  String _filterTimeStatus = 'All';
   bool _filterAvailableOnly = false;
 
   @override
@@ -57,16 +57,14 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
       final name = (data['event_name'] ?? '').toString().toLowerCase();
       final location = (data['location'] ?? '').toString().toLowerCase();
       
-      // Jika query tidak ditemukan di nama MAUPUN lokasi, return false
       if (!name.contains(searchQuery) && !location.contains(searchQuery)) {
         return false;
       }
     }
 
-    // 3. Filter Kategori (Opsional)
+    // 3. Filter Kategori
     if (_filterCategory != 'All') {
       final category = (data['category'] ?? '').toString();
-      // Case insensitive comparison
       if (category.toLowerCase() != _filterCategory.toLowerCase()) {
         return false;
       }
@@ -74,26 +72,24 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
 
     // 4. Filter Tanggal
     if (_filterDate != null) {
-      // Prioritas 1: Jika Tanggal Spesifik dipilih
       bool isSameDay = eventDate.year == _filterDate!.year &&
           eventDate.month == _filterDate!.month &&
           eventDate.day == _filterDate!.day;
       if (!isSameDay) return false;
     } else if (_filterMonth != null) {
-      // Prioritas 2: Jika hanya Bulan yang dipilih
       bool isSameMonth = eventDate.year == _filterMonth!.year &&
           eventDate.month == _filterMonth!.month;
       if (!isSameMonth) return false;
     }
 
-    // 5. Filter Status Waktu (Opsional)
+    // 5. Filter Status Waktu
     if (_filterTimeStatus == 'Upcoming') {
       if (eventDate.isBefore(now)) return false;
     } else if (_filterTimeStatus == 'Past') {
       if (eventDate.isAfter(now)) return false;
     }
 
-    // 6. Filter Ketersediaan (Opsional)
+    // 6. Filter Ketersediaan
     if (_filterAvailableOnly) {
       int quota = data['participants'] is int ? data['participants'] : 0;
       int filled = data['participants_count'] is int ? data['participants_count'] : 0;
@@ -147,30 +143,21 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
         ),
       ),
       
-      // --- NAVIGATION BAR ---
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 1,
         selectedItemColor: Colors.deepPurple,
         unselectedItemColor: Colors.grey,
         items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.home_filled), label: "Home"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.event), label: "Event"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.qr_code_scanner), label: "Scan"),
+          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.event), label: "Event"),
+          BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner), label: "Scan"),
         ],
         onTap: (index) {
           if (index == 0) {
             Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const AdminHomeScreen()));
+                context, MaterialPageRoute(builder: (_) => const AdminHomeScreen()));
           } else if (index == 2) {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const ScanScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanScreen()));
           }
         },
       ),
@@ -196,11 +183,7 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.search,
-                    size: 18,
-                    color: Color(0xFF9C9C9C),
-                  ),
+                  const Icon(Icons.search, size: 18, color: Color(0xFF9C9C9C)),
                   const SizedBox(width: 10),
                   Expanded(
                     child: TextField(
@@ -222,19 +205,11 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
                       ),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontFamily: 'Poppins',
-                      ),
+                      style: const TextStyle(fontSize: 12, fontFamily: 'Poppins'),
                     ),
                   ),
-                  // --- TOMBOL FILTER (ICON DIPERBAIKI) ---
                   IconButton(
-                    icon: const Icon(
-                      Icons.tune, // Icon diganti sesuai gambar (sliders)
-                      size: 20,
-                      color: Color(0xFF594AFC), // Diberi warna ungu agar terlihat aktif
-                    ),
+                    icon: const Icon(Icons.tune, size: 20, color: Color(0xFF594AFC)),
                     onPressed: _showFilterDialog,
                     constraints: const BoxConstraints(),
                     padding: EdgeInsets.zero,
@@ -254,9 +229,7 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF594AFC),
-                    ),
+                    child: CircularProgressIndicator(color: Color(0xFF594AFC)),
                   );
                 }
                 
@@ -275,7 +248,6 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                   );
                 }
 
-                // Terapkan Filter Logic
                 final filteredDocs = allDocs.where(_shouldShowEvent).toList();
 
                 if (filteredDocs.isEmpty) {
@@ -303,6 +275,9 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
 
                     final dateStr = _formatDate(date);
                     final timeStr = _formatTime(date);
+                    
+                    // AMBIL IMAGE URL
+                    final imageUrl = event["image_url"] ?? '';
 
                     return Container(
                       padding: const EdgeInsets.all(15),
@@ -320,6 +295,45 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // ===================== IMAGE THUMBNAIL =====================
+                          if (imageUrl.isNotEmpty)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                imageUrl,
+                                height: 120,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    height: 120,
+                                    color: Colors.grey[200],
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        color: Color(0xFF594AFC),
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    height: 120,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Center(
+                                      child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          
+                          if (imageUrl.isNotEmpty) const SizedBox(height: 12),
+                          
                           Text(
                             event["event_name"] ?? "-",
                             style: const TextStyle(
@@ -371,13 +385,17 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                                 color: Color(0xFF777777),
                               ),
                               const SizedBox(width: 5),
-                              Text(
-                                event["location"] ?? "Location not set",
-                                style: const TextStyle(
-                                  color: Color(0xFF777777),
-                                  fontSize: 12,
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w400,
+                              Expanded(
+                                child: Text(
+                                  event["location"] ?? "Location not set",
+                                  style: const TextStyle(
+                                    color: Color(0xFF777777),
+                                    fontSize: 12,
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
@@ -392,7 +410,11 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(30),
                                     boxShadow: const [
-                                      BoxShadow(color: Color(0x11000000), blurRadius: 9.5, offset: Offset(0, 5)),
+                                      BoxShadow(
+                                        color: Color(0x11000000),
+                                        blurRadius: 9.5,
+                                        offset: Offset(0, 5),
+                                      ),
                                     ],
                                   ),
                                   child: ElevatedButton(
@@ -401,14 +423,23 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                                       backgroundColor: Colors.white,
                                       foregroundColor: const Color(0xFF9A2824),
                                       elevation: 0,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
                                     ),
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: const [
                                         Icon(Icons.delete_outline, size: 18),
                                         SizedBox(width: 5),
-                                        Text('Delete', style: TextStyle(fontSize: 14, fontFamily: 'Poppins', fontWeight: FontWeight.w500)),
+                                        Text(
+                                          'Delete',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontFamily: 'Poppins',
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -421,26 +452,44 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(30),
                                     boxShadow: const [
-                                      BoxShadow(color: Color(0x11000000), blurRadius: 9.5, offset: Offset(0, 5)),
+                                      BoxShadow(
+                                        color: Color(0x11000000),
+                                        blurRadius: 9.5,
+                                        offset: Offset(0, 5),
+                                      ),
                                     ],
                                   ),
                                   child: ElevatedButton(
                                     onPressed: () {
-                                      Navigator.push(context, MaterialPageRoute(builder: (_) => EditEventScreen(eventId: eventId)));
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => EditEventScreen(eventId: eventId),
+                                        ),
+                                      );
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.white,
                                       foregroundColor: const Color(0xFF594AFC),
                                       elevation: 0,
                                       side: const BorderSide(width: 1, color: Color(0xFF594AFC)),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
                                     ),
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: const [
                                         Icon(Icons.edit_outlined, size: 18),
                                         SizedBox(width: 5),
-                                        Text('Edit Event', style: TextStyle(fontSize: 14, fontFamily: 'Poppins', fontWeight: FontWeight.w500)),
+                                        Text(
+                                          'Edit Event',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontFamily: 'Poppins',
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -463,12 +512,9 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
 
   // --- FILTER DIALOG UI ---
   void _showFilterDialog() {
-    // Temporary variables untuk menyimpan state saat dialog dibuka
     DateTime? tempDate = _filterDate;
     DateTime? tempMonth = _filterMonth;
     String tempCategory = _filterCategory;
-    
-    // Opsi tambahan
     String tempTimeStatus = _filterTimeStatus;
     bool tempAvailableOnly = _filterAvailableOnly;
 
@@ -495,16 +541,34 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                 children: [
                   Center(
                     child: Container(
-                      width: 50, height: 5,
-                      decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
+                      width: 50,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text("Filter Options", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Poppins')),
+                  const Text(
+                    "Filter Options",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   
-                  // --- 1. FILTER TANGGAL (Specific Date) ---
-                  const Text("Specific Date", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+                  // Date Filter
+                  const Text(
+                    "Specific Date",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   InkWell(
                     onTap: () async {
@@ -517,8 +581,7 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                       if (picked != null) {
                         setModalState(() {
                           tempDate = picked;
-                          // Jika pilih tanggal spesifik, reset bulan agar tidak rancu
-                          tempMonth = null; 
+                          tempMonth = null;
                         });
                       }
                     },
@@ -532,23 +595,33 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            tempDate != null ? DateFormat('EEE, d MMM yyyy').format(tempDate!) : "Select Date",
-                            style: TextStyle(color: tempDate != null ? Colors.black : Colors.grey, fontFamily: 'Poppins'),
+                            tempDate != null
+                                ? DateFormat('EEE, d MMM yyyy').format(tempDate!)
+                                : "Select Date",
+                            style: TextStyle(
+                              color: tempDate != null ? Colors.black : Colors.grey,
+                              fontFamily: 'Poppins',
+                            ),
                           ),
                           const Icon(Icons.calendar_today, size: 18, color: Color(0xFF594AFC)),
                         ],
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 15),
-
-                  // --- 2. FILTER BULAN (Month) ---
-                  const Text("Or Select Month", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+                  
+                  // Month Filter
+                  const Text(
+                    "Or Select Month",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   InkWell(
                     onTap: () async {
-                      // Menggunakan DatePicker standar tapi user diminta pilih tanggal sembarang di bulan itu
                       final picked = await showDatePicker(
                         context: context,
                         initialDate: tempMonth ?? DateTime.now(),
@@ -559,8 +632,7 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                       if (picked != null) {
                         setModalState(() {
                           tempMonth = picked;
-                          // Jika pilih bulan, reset tanggal spesifik
-                          tempDate = null; 
+                          tempDate = null;
                         });
                       }
                     },
@@ -574,19 +646,34 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            tempMonth != null ? DateFormat('MMMM yyyy').format(tempMonth!) : "Select Month",
-                            style: TextStyle(color: tempMonth != null ? Colors.black : Colors.grey, fontFamily: 'Poppins'),
+                            tempMonth != null
+                                ? DateFormat('MMMM yyyy').format(tempMonth!)
+                                : "Select Month",
+                            style: TextStyle(
+                              color: tempMonth != null ? Colors.black : Colors.grey,
+                              fontFamily: 'Poppins',
+                            ),
                           ),
-                          const Icon(Icons.calendar_view_month, size: 18, color: Color(0xFF594AFC)),
+                          const Icon(
+                            Icons.calendar_view_month,
+                            size: 18,
+                            color: Color(0xFF594AFC),
+                          ),
                         ],
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 15),
-
-                  // --- 3. FILTER KATEGORI ---
-                  const Text("Category", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+                  
+                  // Category Filter
+                  const Text(
+                    "Category",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 8,
@@ -605,7 +692,9 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                         ),
                         backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                          side: BorderSide(color: isSelected ? Colors.transparent : Colors.grey.shade300),
+                          side: BorderSide(
+                            color: isSelected ? Colors.transparent : Colors.grey.shade300,
+                          ),
                           borderRadius: BorderRadius.circular(20)
                         ),
                         onSelected: (bool selected) {
@@ -618,10 +707,9 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                       );
                     }).toList(),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // --- 4. Location INFO ---
+                  
+                  // Info
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -632,13 +720,21 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                       children: const [
                         Icon(Icons.info_outline, size: 18, color: Colors.blue),
                         SizedBox(width: 10),
-                        Expanded(child: Text("Use the Search Bar to filter by Location.", style: TextStyle(fontSize: 12, color: Colors.blue, fontFamily: 'Poppins'))),
+                        Expanded(
+                          child: Text(
+                            "Use the Search Bar to filter by Location.",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 30),
-
+                  
                   // Buttons
                   Row(
                     children: [
@@ -655,10 +751,18 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                           },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Color(0xFF594AFC)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 15),
                           ),
-                          child: const Text("Reset", style: TextStyle(color: Color(0xFF594AFC), fontFamily: 'Poppins')),
+                          child: const Text(
+                            "Reset",
+                            style: TextStyle(
+                              color: Color(0xFF594AFC),
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 15),
@@ -676,10 +780,18 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF594AFC),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 15),
                           ),
-                          child: const Text("Apply Filter", style: TextStyle(color: Colors.white, fontFamily: 'Poppins')),
+                          child: const Text(
+                            "Apply Filter",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -714,9 +826,7 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'Delete Event',
           style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
@@ -743,7 +853,11 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
             },
             child: const Text(
               'Delete',
-              style: TextStyle(color: Color(0xFF9A2824), fontFamily: 'Poppins', fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: Color(0xFF9A2824),
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

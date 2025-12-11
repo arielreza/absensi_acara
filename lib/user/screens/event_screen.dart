@@ -1,3 +1,5 @@
+// lib/user/screens/event_screen.dart
+
 import 'package:absensi_acara/models/event.dart';
 import 'package:absensi_acara/services/auth_service.dart';
 import 'package:absensi_acara/user/widgets/event_card.dart';
@@ -38,6 +40,7 @@ class EventScreen extends StatelessWidget {
                 date: event.date,
                 location: event.location,
                 userId: userId,
+                imageUrl: event.imageUrl, // PASS IMAGE URL
               );
             }
             return const SizedBox.shrink();
