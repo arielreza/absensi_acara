@@ -4,6 +4,7 @@ import 'package:absensi_acara/models/absence.dart';
 import 'package:absensi_acara/models/event.dart';
 import 'package:absensi_acara/models/user.dart';
 import 'package:absensi_acara/user/screens/detail_history_screen.dart';
+import 'package:absensi_acara/user/widgets/placeholder_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -33,8 +34,6 @@ class DetailHistoryCard extends StatelessWidget {
     Widget buildQrCodeWithDebug() {
       final qrData = jsonEncode({"user_id": user.id.toString(), "event_id": event.id.toString()});
 
-      print('QR Data: $qrData'); // Cek di console
-
       return Column(
         children: [
           QrImageView(
@@ -44,8 +43,6 @@ class DetailHistoryCard extends StatelessWidget {
             backgroundColor: Colors.white,
             errorCorrectionLevel: QrErrorCorrectLevel.H,
           ),
-          const SizedBox(height: 10),
-          Text('Data: $qrData', style: const TextStyle(fontSize: 10)),
         ],
       );
     }
@@ -72,15 +69,26 @@ class DetailHistoryCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.asset(
-                    "assets/ticket_header.png",
-                    height: 180,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
+                event.imageUrl.isNotEmpty
+                    ? Image.network(
+                        event.imageUrl,
+                        width: double.infinity,
+                        height: 300,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: const Color(0xFFD9D9D9),
+                            child: const Center(
+                              child: CircularProgressIndicator(color: Color(0xFF594AFC)),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return PlaceholderImage();
+                        },
+                      )
+                    : PlaceholderImage(),
 
                 const SizedBox(height: 14),
 
