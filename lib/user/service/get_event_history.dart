@@ -1,49 +1,41 @@
-import 'package:absensi_acara/models/absence.dart';
-import 'package:absensi_acara/models/event.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:rxdart/rxdart.dart';
 
-import '../../models/user.dart';
+// ✅ Tambahkan .autoDispose
+final getEventHistory = FutureProvider.autoDispose
+    .family<Map<String, dynamic>, Map<String, String>>((ref, params) async {
+      final eventId = params["eventId"];
+      final userId = params["userId"];
 
-final getEventHistory = StreamProvider.family<Map<String, dynamic>, Map<String, String>>((
-  ref,
-  params,
-) {
-  final eventId = params["eventId"]!;
-  final userId = params["userId"]!;
+      print("Fetching event: $eventId"); // Debug log (hanya sekali per event)
 
-  return FirebaseFirestore.instance
-      .collection("absences")
-      .where("event_id", isEqualTo: eventId)
-      .where("user_id", isEqualTo: userId)
-      .limit(1)
-      .snapshots()
-      .switchMap((snap) {
-        if (snap.docs.isEmpty) {
-          return Stream.value({"error": "absence_not_found"});
+      try {
+        if (eventId == null || eventId.isEmpty) {
+          return {"error": "Event ID is null or empty"};
         }
 
-        final absence = Absence.fromFirestore(snap.docs.first);
+        final eventDoc = await FirebaseFirestore.instance.collection("events").doc(eventId).get();
 
-        final eventStream = FirebaseFirestore.instance
-            .collection("events")
-            .doc(absence.eventId)
-            .snapshots()
-            .map(Event.fromFirestore);
+        if (!eventDoc.exists) {
+          return {"error": "Event not found with ID: $eventId"};
+        }
 
-        final userStream = FirebaseFirestore.instance
-            .collection("users")
-            .doc(absence.userId)
-            .snapshots()
-            .map(User.fromFirestore);
+        final eventData = eventDoc.data();
+        if (eventData == null) {
+          return {"error": "Event data is null"};
+        }
 
-        return Rx.combineLatest3(Stream.value(absence), eventStream, userStream, (
-          absence,
-          event,
-          user,
-        ) {
-          return {"absence": absence, "event": event, "user": user};
-        });
-      });
-});
+        // Parse event data
+        final event = {
+          "id": eventDoc.id,
+          "name": eventData['event_name'] ?? 'Unnamed Event',
+          "date": eventData['event_date'] ?? Timestamp.now(),
+          "location": eventData['location'] ?? 'Unknown Location',
+        };
+
+        return {"event": event, "error": null};
+      } catch (e) {
+        print("Error in getEventHistory: $e");
+        return {"error": e.toString()};
+      }
+    });
