@@ -23,11 +23,9 @@ class DetailHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // print(user.name);
-
     // Format time and date
     final eventDateTime = (event.date as dynamic).toDate() as DateTime;
-    final timeFormat = DateFormat('HH:mm').format(eventDateTime);
+    final timeFormat = DateFormat('hh:mm').format(eventDateTime);
     final dateFormat = DateFormat('EEEE, dd MMMM yyyy').format(eventDateTime);
 
     // Test apakah JSON yang dihasilkan valid
