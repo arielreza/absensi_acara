@@ -1,6 +1,5 @@
 import 'package:absensi_acara/models/event.dart';
 import 'package:absensi_acara/user/screens/detail_event_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -9,7 +8,7 @@ class EventCard extends ConsumerWidget {
   final Event event;
   final String eventId;
   final String userId;
-  final String? imageUrl; 
+  final String? imageUrl;
 
   const EventCard({
     super.key,
@@ -24,21 +23,17 @@ class EventCard extends ConsumerWidget {
     // Parsing Tanggal yang Aman
     DateTime eventDate = DateTime.now();
     try {
-      if (event.date is Timestamp) {
-        eventDate = (event.date as Timestamp).toDate();
-      } else {
-        eventDate = event.date as DateTime;
-      }
+      eventDate = (event.date).toDate();
     } catch (e) {
       // Fallback diam jika gagal
     }
 
     final String dateFormatted = DateFormat('EEE, MMM d').format(eventDate);
-    final String timeFormatted = DateFormat('hh.mm a').format(eventDate); 
+    final String timeFormatted = DateFormat('hh.mm a').format(eventDate);
 
     // Menggunakan Image URL dari parameter jika ada, fallback ke event object
-    final String displayImage = (imageUrl != null && imageUrl!.isNotEmpty) 
-        ? imageUrl! 
+    final String displayImage = (imageUrl != null && imageUrl!.isNotEmpty)
+        ? imageUrl!
         : event.imageUrl;
 
     return GestureDetector(
@@ -51,18 +46,14 @@ class EventCard extends ConsumerWidget {
         );
       },
       child: Container(
-        width: 284, 
+        width: 284,
         margin: const EdgeInsets.only(right: 20),
         padding: const EdgeInsets.all(10), // Padding dalam container putih
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: const [
-            BoxShadow(
-              color: Color(0x19000000), 
-              blurRadius: 6,
-              offset: Offset(0, 0),
-            ),
+            BoxShadow(color: Color(0x19000000), blurRadius: 6, offset: Offset(0, 0)),
           ],
         ),
         child: Column(
@@ -76,22 +67,19 @@ class EventCard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(20),
                 color: const Color(0xFFD9D9D9),
                 image: (displayImage.isNotEmpty)
-                    ? DecorationImage(
-                        image: NetworkImage(displayImage),
-                        fit: BoxFit.cover,
-                      )
+                    ? DecorationImage(image: NetworkImage(displayImage), fit: BoxFit.cover)
                     : null,
               ),
               child: (displayImage.isEmpty)
                   ? const Center(child: Icon(Icons.image_not_supported, color: Colors.white54))
                   : null,
             ),
-            
+
             const SizedBox(height: 15),
 
             // ===================== TEXT SECTION =====================
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4), 
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -108,9 +96,9 @@ class EventCard extends ConsumerWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  
+
                   const SizedBox(height: 6),
-                  
+
                   // Date & Time
                   Row(
                     children: [
@@ -125,8 +113,12 @@ class EventCard extends ConsumerWidget {
                       ),
                       const SizedBox(width: 5),
                       Container(
-                        width: 3, height: 3,
-                        decoration: const BoxDecoration(color: Color(0xFF594AFC), shape: BoxShape.circle),
+                        width: 3,
+                        height: 3,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF594AFC),
+                          shape: BoxShape.circle,
+                        ),
                       ),
                       const SizedBox(width: 5),
                       Text(
@@ -140,9 +132,9 @@ class EventCard extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 7),
-                  
+
                   // Location
                   Row(
                     children: [

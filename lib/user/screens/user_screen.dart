@@ -1,10 +1,7 @@
-import 'package:absensi_acara/services/auth_service.dart';
 import 'package:absensi_acara/user/screens/history_screen.dart';
 import 'package:absensi_acara/user/screens/home_screen.dart';
 import 'package:absensi_acara/user/screens/profile_screen.dart';
-import 'package:absensi_acara/user/widgets/logout.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class UserHomeScreen extends StatefulWidget {
   final int initialTab;
@@ -26,20 +23,20 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.read<AuthService>();
+    // final auth = context.read<AuthService>();
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        elevation: 0,
-        title: const Text('Aplikasi Presensi'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => showLogoutDialog(context, auth),
-          ),
-        ],
-      ),
+      // appBar: AppBar(
+      //   backgroundColor: Colors.blue,
+      //   elevation: 0,
+      //   title: const Text('Aplikasi Presensi'),
+      //   actions: [
+      //     IconButton(
+      //       icon: const Icon(Icons.logout),
+      //       onPressed: () => showLogoutDialog(context, auth),
+      //     ),
+      //   ],
+      // ),
       body: _buildTabContent(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedTab,

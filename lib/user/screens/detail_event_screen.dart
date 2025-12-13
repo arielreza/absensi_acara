@@ -399,10 +399,14 @@ class DetailEventScreen extends ConsumerWidget {
                                     const SizedBox(height: 15),
                                     Row(
                                       children: [
-                                        const Icon(Icons.calendar_today, size: 14),
+                                        const Icon(
+                                          Icons.calendar_today,
+                                          size: 14,
+                                          color: Colors.deepPurpleAccent,
+                                        ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          'Next date ${event.date}',
+                                          '1 January 2025',
                                           style: const TextStyle(
                                             fontSize: 12,
                                             color: Colors.black,
@@ -414,7 +418,11 @@ class DetailEventScreen extends ConsumerWidget {
                                     const SizedBox(height: 10),
                                     const Row(
                                       children: [
-                                        Icon(Icons.access_time, size: 14),
+                                        Icon(
+                                          Icons.access_time,
+                                          size: 14,
+                                          color: Colors.deepPurpleAccent,
+                                        ),
                                         SizedBox(width: 8),
                                         Text(
                                           '2 hours',
@@ -430,7 +438,11 @@ class DetailEventScreen extends ConsumerWidget {
                                     Row(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Icon(Icons.location_on, size: 14),
+                                        const Icon(
+                                          Icons.location_on,
+                                          size: 14,
+                                          color: Colors.deepPurpleAccent,
+                                        ),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(

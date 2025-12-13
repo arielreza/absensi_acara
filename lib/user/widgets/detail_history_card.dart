@@ -26,7 +26,7 @@ class DetailHistoryCard extends StatelessWidget {
     // Format time and date
     final eventDateTime = (event.date as dynamic).toDate() as DateTime;
     final timeFormat = DateFormat('hh:mm').format(eventDateTime);
-    final dateFormat = DateFormat('EEEE, dd MMMM yyyy').format(eventDateTime);
+    final dateFormat = DateFormat('dd MMM yyyy').format(eventDateTime);
 
     // Test apakah JSON yang dihasilkan valid
     Widget buildQrCodeWithDebug() {
@@ -95,10 +95,8 @@ class DetailHistoryCard extends StatelessWidget {
                   style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, height: 1.3),
                 ),
 
-                const SizedBox(height: 16),
-
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Column(
                     children: [
                       Row(
@@ -108,8 +106,8 @@ class DetailHistoryCard extends StatelessWidget {
                           DetailColumn(title: "NIM", value: user.nim),
                         ],
                       ),
-                      const SizedBox(height: 18),
 
+                      // const SizedBox(height: 18),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -118,8 +116,7 @@ class DetailHistoryCard extends StatelessWidget {
                         ],
                       ),
 
-                      const SizedBox(height: 18),
-
+                      // const SizedBox(height: 18),
                       Align(
                         alignment: Alignment.centerLeft,
                         child: DetailColumn(title: "Place", value: event.location, fullWidth: true),
@@ -149,29 +146,30 @@ class DetailHistoryCard extends StatelessWidget {
               ],
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  children: [
-                    const Text(
-                      "Scan this QR Code\nor show this ticket\nat webinar",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Colors.black87),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text("Ticket ID", style: TextStyle(color: Colors.grey)),
-                    Text(
-                      absence.id,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Scan this QR Code\nor show this ticket\nat webinar",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 14, color: Colors.black87),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text("Ticket ID", style: TextStyle(color: Colors.grey)),
+                      Text(
+                        absence.id,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
                 ),
-                buildQrCodeWithDebug(),
-                // QrImageView(
-                //   data: jsonEncode({"user_id": user.id, "event_id": event.id}),
-                //   version: QrVersions.auto,
-                //   size: 180,
-                // ),
+                const SizedBox(width: 12),
+
+                Flexible(child: buildQrCodeWithDebug()),
               ],
             ),
           ),

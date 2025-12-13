@@ -39,16 +39,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Gunakan model Event untuk parsing aman
       final event = Event.fromFirestore(doc);
-      
+
       // KONVERSI TANGGAL YANG AMAN (Handle Timestamp atau DateTime)
       DateTime eventDate;
-      if (event.date is Timestamp) {
-        eventDate = (event.date as Timestamp).toDate();
-      } else if (event.date is DateTime) {
-        eventDate = event.date as DateTime;
-      } else {
-        return false; // Skip jika format tanggal tidak dikenali
-      }
+      eventDate = (event.date).toDate();
 
       DateTime now = DateTime.now();
 
@@ -67,7 +61,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // 3. Filter Tanggal Spesifik
       if (_filterDate != null) {
-        bool isSameDay = eventDate.year == _filterDate!.year &&
+        bool isSameDay =
+            eventDate.year == _filterDate!.year &&
             eventDate.month == _filterDate!.month &&
             eventDate.day == _filterDate!.day;
         if (!isSameDay) return false;
@@ -110,17 +105,15 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               // --- HEADER SECTION ---
               StreamBuilder<DocumentSnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(user?.uid)
-                    .snapshots(),
+                stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
                 builder: (context, snapshot) {
                   String displayName = defaultName;
                   String initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U';
 
                   if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
                     final userData = snapshot.data!.data() as Map<String, dynamic>;
-                    displayName = userData['nama_lengkap'] ??
+                    displayName =
+                        userData['nama_lengkap'] ??
                         userData['name'] ??
                         userData['fullName'] ??
                         defaultName;
@@ -134,25 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Row(
                       children: [
                         // Avatar
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF594AFC),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              initial,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                          ),
-                        ),
+                        Image.asset('assets/images/profile.png', width: 44, height: 44),
                         const SizedBox(width: 12),
                         // Greeting & Name
                         Expanded(
@@ -208,7 +183,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: Colors.transparent,
                                 ),
                                 child: const Center(
-                                  child: Icon(Icons.notifications_outlined, size: 18, color: Colors.black),
+                                  child: Icon(
+                                    Icons.notifications_outlined,
+                                    size: 18,
+                                    color: Colors.black,
+                                  ),
                                 ),
                               ),
                             ),
@@ -242,11 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x0C000000), 
-                        blurRadius: 8, 
-                        offset: Offset(0, 0)
-                      ),
+                      BoxShadow(color: Color(0x0C000000), blurRadius: 8, offset: Offset(0, 0)),
                     ],
                   ),
                   child: Row(
@@ -264,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           decoration: const InputDecoration(
                             hintText: 'What event are you looking for...',
                             hintStyle: TextStyle(
-                              color: Color(0xFF9C9C9C), 
+                              color: Color(0xFF9C9C9C),
                               fontSize: 12,
                               fontFamily: 'Poppins',
                             ),
@@ -332,9 +307,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Handling Error Database
                   if (snapshot.hasError) {
-                     return SizedBox(
+                    return SizedBox(
                       height: sectionHeight,
-                      child: Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.red))),
+                      child: Center(
+                        child: Text(
+                          "Error: ${snapshot.error}",
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
                     );
                   }
 
@@ -373,16 +353,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: sectionHeight,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 5), 
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 5),
                       itemCount: filteredDocs.length,
                       itemBuilder: (context, index) {
                         final doc = filteredDocs[index];
                         final event = Event.fromFirestore(doc);
                         final data = doc.data() as Map<String, dynamic>;
-                        
+
                         // Fallback image handling
                         final imageUrl = data['image_url'] as String? ?? event.imageUrl;
-                        
+
                         return EventCard(
                           event: event,
                           eventId: event.id,
@@ -458,7 +438,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     .snapshots(),
                 builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                   if (snapshot.hasError) {
-                     return Center(child: Text("Error loading data", style: TextStyle(color: Colors.red)));
+                    return Center(
+                      child: Text("Error loading data", style: TextStyle(color: Colors.red)),
+                    );
                   }
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -498,7 +480,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         final event = Event.fromFirestore(doc);
                         final data = doc.data() as Map<String, dynamic>;
                         final imageUrl = data['image_url'] as String? ?? event.imageUrl;
-                        
+
                         return _buildVerticalEventCard(event, imageUrl, user?.uid ?? '');
                       },
                     ),
@@ -528,9 +510,7 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF594AFC) : Colors.transparent,
           borderRadius: BorderRadius.circular(30),
-          border: isSelected 
-              ? null 
-              : Border.all(color: const Color(0xFFCACACA), width: 1),
+          border: isSelected ? null : Border.all(color: const Color(0xFFCACACA), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -562,11 +542,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Handling tanggal aman
     DateTime eventDate = DateTime.now();
     try {
-      if (event.date is Timestamp) {
-        eventDate = (event.date as Timestamp).toDate();
-      } else {
-        eventDate = event.date as DateTime;
-      }
+      eventDate = (event.date).toDate();
     } catch (e) {
       // fallback if date parsing fails
     }
@@ -574,18 +550,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         // Navigasi
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Opening ${event.name}')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Opening ${event.name}')));
       },
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: const [
-            BoxShadow(
-              color: Color(0x19000000), 
-              blurRadius: 6, 
-              offset: Offset(0, 0)
-            ),
+            BoxShadow(color: Color(0x19000000), blurRadius: 6, offset: Offset(0, 0)),
           ],
         ),
         padding: const EdgeInsets.all(10),
@@ -641,8 +615,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(width: 5),
                           Container(
-                            width: 3, height: 3,
-                            decoration: const BoxDecoration(color: Color(0xFF594AFC), shape: BoxShape.circle),
+                            width: 3,
+                            height: 3,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF594AFC),
+                              shape: BoxShape.circle,
+                            ),
                           ),
                           const SizedBox(width: 5),
                           Flexible(
@@ -679,7 +657,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
@@ -691,10 +669,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   IconData _getCategoryIcon(String category) {
     switch (category) {
-      case 'Music': return Icons.music_note_rounded;
-      case 'Art': return Icons.palette_rounded;
-      case 'Workshop': return Icons.work_rounded;
-      default: return Icons.category;
+      case 'Music':
+        return Icons.music_note_rounded;
+      case 'Art':
+        return Icons.palette_rounded;
+      case 'Workshop':
+        return Icons.work_rounded;
+      default:
+        return Icons.category;
     }
   }
 
@@ -745,13 +727,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 20),
                   const Text(
                     "Filter Events",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Poppins',
+                    ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Filter Tanggal
-                  const Text("Date", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+                  const Text(
+                    "Date",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   InkWell(
                     onTap: () async {
@@ -790,7 +783,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 : "Select Specific Date",
                             style: TextStyle(
                               color: tempDate != null ? Colors.black : Colors.grey,
-                              fontFamily: 'Poppins'
+                              fontFamily: 'Poppins',
                             ),
                           ),
                           const Icon(Icons.calendar_today, size: 18, color: Color(0xFF594AFC)),
@@ -798,11 +791,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Filter Time Status
-                  const Text("Time Status", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+                  const Text(
+                    "Time Status",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 10,
@@ -819,7 +819,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                          side: BorderSide(color: isSelected ? Colors.transparent : Colors.grey.shade300),
+                          side: BorderSide(
+                            color: isSelected ? Colors.transparent : Colors.grey.shade300,
+                          ),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         onSelected: (bool selected) {
@@ -832,25 +834,35 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     }).toList(),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Filter Availability
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text("Available Seats Only", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
-                    subtitle: const Text("Hide events that are fully booked", style: TextStyle(fontSize: 12, color: Colors.grey, fontFamily: 'Poppins')),
+                    title: const Text(
+                      "Available Seats Only",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                    subtitle: const Text(
+                      "Hide events that are fully booked",
+                      style: TextStyle(fontSize: 12, color: Colors.grey, fontFamily: 'Poppins'),
+                    ),
                     value: tempAvailableOnly,
-                    activeColor: const Color(0xFF594AFC),
+                    activeThumbColor: const Color(0xFF594AFC),
                     onChanged: (bool value) {
                       setModalState(() {
                         tempAvailableOnly = value;
                       });
                     },
                   ),
-                  
+
                   const SizedBox(height: 30),
-                  
+
                   Row(
                     children: [
                       Expanded(
@@ -867,7 +879,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.symmetric(vertical: 15),
                           ),
-                          child: const Text("Reset", style: TextStyle(color: Color(0xFF594AFC), fontFamily: 'Poppins')),
+                          child: const Text(
+                            "Reset",
+                            style: TextStyle(color: Color(0xFF594AFC), fontFamily: 'Poppins'),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 15),
@@ -886,7 +901,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.symmetric(vertical: 15),
                           ),
-                          child: const Text("Apply Filter", style: TextStyle(color: Colors.white, fontFamily: 'Poppins')),
+                          child: const Text(
+                            "Apply Filter",
+                            style: TextStyle(color: Colors.white, fontFamily: 'Poppins'),
+                          ),
                         ),
                       ),
                     ],

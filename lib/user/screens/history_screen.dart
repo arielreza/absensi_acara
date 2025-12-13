@@ -66,10 +66,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFFBFBFB),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: const Text(
           "History",
           style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w600),
@@ -162,7 +158,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   if (eventDate != null && eventDate is Timestamp) {
                     try {
                       final dateTime = eventDate.toDate();
-                      formattedDate = DateFormat("MMMM dd, yyyy").format(dateTime);
+                      formattedDate = DateFormat("dd MMMM yyyy").format(dateTime);
                       formattedTime = DateFormat("h:mm a").format(dateTime);
                     } catch (e) {
                       print("Error formatting date: $e");
