@@ -13,6 +13,12 @@ import 'attendance_history.dart';
 import 'event_management_screen.dart';
 import 'edit_event_screen.dart';
 
+import 'dart:io';
+import 'package:excel/excel.dart' as excel_package;
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:universal_io/io.dart' as uio;
+
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key});
 
@@ -169,10 +175,101 @@ class AdminHomeScreen extends StatelessWidget {
                       MaterialPageRoute(builder: (_) => const AttendanceHistoryScreen()),
                     );
                   }),
-                  _quickActionTile(Icons.upload_file, "Export\nData", () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Coming Soon")),
+                  _quickActionTile(Icons.upload_file, "Export\nData", () async {
+                    final dialogContext = context;
+                    showDialog(
+                      context: dialogContext,
+                      barrierDismissible: false,
+                      builder: (context) => const AlertDialog(
+                        content: Row(
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(width: 16),
+                            Text("Mengekspor data...", style: TextStyle(fontFamily: 'Poppins')),
+                          ],
+                        ),
+                      ),
                     );
+
+                    try {
+                      // 1. Ambil data dari SQLite (DatabaseService lokal)
+                      final attendanceList = await DatabaseService().getAttendanceHistory();
+    
+                      if (attendanceList.isEmpty) {
+                        Navigator.pop(dialogContext);
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          const SnackBar(
+                            content: Text('Tidak ada data absensi untuk diekspor.',
+                                        style: TextStyle(fontFamily: 'Poppins')),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                        return;
+                      }
+                      
+                      // 2. Buat file Excel menggunakan paket excel
+                      final excel = excel_package.Excel.createExcel();
+                      final sheet = excel['Riwayat Absensi'];
+                      
+                      // 3. Tambahkan header
+                      sheet.appendRow([
+                        'ID Absensi',
+                        'ID Peserta',
+                        'Nama Peserta',
+                        'Waktu Absensi',
+                        'Status'
+                      ]);
+                      
+                      // 4. Tambahkan data dari SQLite
+                      for (var attendance in attendanceList) {
+                        sheet.appendRow([
+                          attendance.id,
+                          attendance.participantId,
+                          attendance.participantName,
+                          attendance.attendanceTime.toString(),
+                          attendance.status,
+                        ]);
+                      }
+                      
+                      // 5. Simpan file
+                      final excelBytes = excel.save();
+                      if (excelBytes == null) {
+                        throw Exception('Gagal membuat file Excel');
+                      }
+                      
+                      // 6. Simpan ke file system
+                      final directory = await getTemporaryDirectory();
+                      final fileName = 'riwayat_absensi_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+                      final filePath = '${directory.path}/$fileName';
+                      
+                      final file = File(filePath);
+                      await file.writeAsBytes(excelBytes);
+                      
+                      // 7. Tutup dialog loading
+                      Navigator.pop(dialogContext);
+                      
+                      // 8. Buka file
+                      await OpenFilex.open(filePath);
+                      
+                      // 9. Tampilkan notifikasi sukses
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(
+                          content: Text('Data berhasil diekspor! File telah disimpan.',
+                                      style: TextStyle(fontFamily: 'Poppins')),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                      
+                    } catch (e) {
+                      Navigator.pop(dialogContext);
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        SnackBar(
+                          content: Text('Gagal mengekspor: ${e.toString()}', 
+                                      style: TextStyle(fontFamily: 'Poppins')),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   }),
                 ],
               ),
