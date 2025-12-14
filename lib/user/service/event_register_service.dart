@@ -10,15 +10,70 @@ class EventRegisterService {
 
   EventRegisterService(this.firestore);
 
-  Future<void> daftarEvent({required String eventId, required String userId}) async {
-    final docRef = firestore.collection("absences").doc();
+  /// ===================== DAFTAR EVENT =====================
+  Future<void> daftarEvent({
+    required String eventId,
+    required String userId,
+  }) async {
+    final eventRef = firestore.collection("events").doc(eventId);
+    final absenceRef = firestore.collection("absences").doc();
 
-    await docRef.set({
-      "absence_id": docRef.id,
-      "event_id": eventId,
-      "user_id": userId,
-      "absence_time": null,
-      "status": "belum hadir",
+    await firestore.runTransaction((transaction) async {
+      final eventSnap = await transaction.get(eventRef);
+
+      if (!eventSnap.exists) {
+        throw Exception("EVENT_NOT_FOUND");
+      }
+
+      final data = eventSnap.data()!;
+      final int quota = data["participants"] ?? 0;
+      final int current = data["participants_count"] ?? 0;
+
+      if (current >= quota) {
+        throw Exception("EVENT_FULL");
+      }
+
+      // update quota
+      transaction.update(eventRef, {"participants_count": current + 1});
+
+      // simpan absensi
+      transaction.set(absenceRef, {
+        "absence_id": absenceRef.id,
+        "event_id": eventId,
+        "user_id": userId,
+        "absence_time": null,
+        "status": "belum hadir",
+        "created_at": Timestamp.now(),
+      });
+    });
+  }
+
+  /// ===================== UNREGISTER EVENT =====================
+  Future<void> unregisterEvent({
+    required String eventId,
+    required String userId,
+    required String absenceId,
+  }) async {
+    final eventRef = firestore.collection("events").doc(eventId);
+    final absenceRef = firestore.collection("absences").doc(absenceId);
+
+    await firestore.runTransaction((transaction) async {
+      final eventSnap = await transaction.get(eventRef);
+
+      if (!eventSnap.exists) {
+        throw Exception("EVENT_NOT_FOUND");
+      }
+
+      final data = eventSnap.data()!;
+      final int current = data["participants_count"] ?? 0;
+
+      // kurangi peserta (minimal 0)
+      transaction.update(eventRef, {
+        "participants_count": current > 0 ? current - 1 : 0,
+      });
+
+      // hapus absensi
+      transaction.delete(absenceRef);
     });
   }
 }

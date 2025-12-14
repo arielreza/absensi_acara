@@ -53,7 +53,11 @@ class EventCard extends ConsumerWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: const [
-            BoxShadow(color: Color(0x19000000), blurRadius: 6, offset: Offset(0, 0)),
+            BoxShadow(
+              color: Color(0x19000000),
+              blurRadius: 6,
+              offset: Offset(0, 0),
+            ),
           ],
         ),
         child: Column(
@@ -67,11 +71,19 @@ class EventCard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(20),
                 color: const Color(0xFFD9D9D9),
                 image: (displayImage.isNotEmpty)
-                    ? DecorationImage(image: NetworkImage(displayImage), fit: BoxFit.cover)
+                    ? DecorationImage(
+                        image: NetworkImage(displayImage),
+                        fit: BoxFit.cover,
+                      )
                     : null,
               ),
               child: (displayImage.isEmpty)
-                  ? const Center(child: Icon(Icons.image_not_supported, color: Colors.white54))
+                  ? const Center(
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: Colors.white54,
+                      ),
+                    )
                   : null,
             ),
 
@@ -138,7 +150,11 @@ class EventCard extends ConsumerWidget {
                   // Location
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 14, color: Color(0xFF777777)),
+                      const Icon(
+                        Icons.location_on,
+                        size: 14,
+                        color: Color(0xFF777777),
+                      ),
                       const SizedBox(width: 5),
                       Expanded(
                         child: Text(
