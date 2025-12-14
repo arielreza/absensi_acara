@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
@@ -19,8 +20,15 @@ import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:universal_io/io.dart' as uio;
 
+import 'dart:convert';
+import 'dart:html' as html;
+
+import 'dart:math' as math;
+
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key});
+
+  int _min(int a, int b) => a < b ? a : b;
 
   Future<int> _countActiveEvents() async {
     final snap = await FirebaseFirestore.instance
@@ -185,21 +193,22 @@ class AdminHomeScreen extends StatelessWidget {
                           children: [
                             CircularProgressIndicator(),
                             SizedBox(width: 16),
-                            Text("Mengekspor data...", style: TextStyle(fontFamily: 'Poppins')),
+                            Text("Mengekspor dari Firestore...", style: TextStyle(fontFamily: 'Poppins')),
                           ],
                         ),
                       ),
                     );
 
                     try {
-                      // 1. Ambil data dari SQLite (DatabaseService lokal)
-                      final attendanceList = await DatabaseService().getAttendanceHistory();
-    
-                      if (attendanceList.isEmpty) {
+                      print('=== MULAI EKSPOR DARI FIRESTORE ===');
+                      
+                      // 1. CEK AUTENTIKASI DULU
+                      final currentUser = FirebaseAuth.instance.currentUser;
+                      if (currentUser == null) {
                         Navigator.pop(dialogContext);
                         ScaffoldMessenger.of(dialogContext).showSnackBar(
                           const SnackBar(
-                            content: Text('Tidak ada data absensi untuk diekspor.',
+                            content: Text('Harus login terlebih dahulu',
                                         style: TextStyle(fontFamily: 'Poppins')),
                             backgroundColor: Colors.orange,
                           ),
@@ -207,66 +216,421 @@ class AdminHomeScreen extends StatelessWidget {
                         return;
                       }
                       
-                      // 2. Buat file Excel menggunakan paket excel
+                      print('User logged in: ${currentUser.uid}');
+                      
+                      // 2. TEST QUERY SEDERHANA DULU
+                      print('Testing Firestore connection...');
+                      try {
+                        final testQuery = await FirebaseFirestore.instance
+                            .collection('events')
+                            .limit(1)
+                            .get();
+                        print('Firestore connection OK');
+                      } catch (e) {
+                        print('Firestore connection failed: $e');
+                        Navigator.pop(dialogContext);
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          SnackBar(
+                            content: Text('Koneksi Firestore gagal: ${e.toString()}',
+                                        style: TextStyle(fontFamily: 'Poppins')),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+                      
+                      // 3. AMBIL DATA DARI COLLECTION "absences"
+                      print('Mengambil data dari koleksi "absences"...');
+                      QuerySnapshot absenceSnapshot;
+                      
+                      try {
+                        absenceSnapshot = await FirebaseFirestore.instance
+                            .collection('absences')
+                            .get();
+                        
+                        print('Berhasil ambil ${absenceSnapshot.docs.length} data dari absences');
+                        
+                      } catch (e) {
+                        print('Gagal ambil dari absences: $e');
+                        
+                        // Fallback: coba collection lain atau tampilkan error spesifik
+                        Navigator.pop(dialogContext);
+                        
+                        if (e.toString().contains('permission-denied')) {
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            const SnackBar(
+                              content: Text('Izin ditolak!\nPeriksa Firestore Rules untuk koleksi "absences"',
+                                          style: TextStyle(fontFamily: 'Poppins')),
+                              backgroundColor: Colors.red,
+                              duration: Duration(seconds: 5),
+                            ),
+                          );
+                        } else if (e.toString().contains('network')) {
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            const SnackBar(
+                              content: Text('Gagal koneksi jaringan\nCek koneksi internet Anda',
+                                          style: TextStyle(fontFamily: 'Poppins')),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: ${e.toString()}',
+                                          style: TextStyle(fontFamily: 'Poppins')),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                        return;
+                      }
+                      
+                      // 4. CEK JIKA DATA KOSONG
+                      if (absenceSnapshot.docs.isEmpty) {
+                        Navigator.pop(dialogContext);
+                        
+                        // Debug: cek koleksi lain untuk pastikan Firestore berfungsi
+                        try {
+                          final eventsCount = await FirebaseFirestore.instance
+                              .collection('events')
+                              .count()
+                              .get();
+                          print('Events count: ${eventsCount.count}');
+                          
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            SnackBar(
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Koleksi "absences" kosong',
+                                            style: TextStyle(fontFamily: 'Poppins')),
+                                  Text('Data events tersedia: ${eventsCount.count}',
+                                      style: const TextStyle(fontSize: 12)),
+                                  const Text('Pastikan sudah ada data absensi',
+                                          style: TextStyle(fontSize: 12)),
+                                ],
+                              ),
+                              backgroundColor: Colors.orange,
+                              duration: const Duration(seconds: 4),
+                            ),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            const SnackBar(
+                              content: Text('Tidak ada data di koleksi "absences"',
+                                          style: TextStyle(fontFamily: 'Poppins')),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        }
+                        return;
+                      }
+                      
+                      // 5. DEBUG: TAMPILKAN STRUKTUR DATA
+                      print('=== STRUKTUR DATA ABSENCES ===');
+                      for (var i = 0; i < _min(2, absenceSnapshot.docs.length); i++) {
+                        final doc = absenceSnapshot.docs[i];
+                        final data = doc.data() as Map<String, dynamic>;
+                        print('Dokumen ${i+1} (${doc.id}):');
+                        data.forEach((key, value) {
+                          print('  $key: $value (${value.runtimeType})');
+                        });
+                      }
+                      
+                      // 6. AMBIL DATA USERS DAN EVENTS UNTUK NAMA LENGKAP
+                      final Set<String> userIds = {};
+                      final Set<String> eventIds = {};
+                      
+                      for (var doc in absenceSnapshot.docs) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final eventId = data['event_id']?.toString() ?? '';
+                        final userId = data['user_id']?.toString() ?? '';
+                        
+                        if (eventId.isNotEmpty) eventIds.add(eventId);
+                        if (userId.isNotEmpty) userIds.add(userId);
+                      }
+                      
+                      print('User IDs ditemukan: ${userIds.length}');
+                      print('Event IDs ditemukan: ${eventIds.length}');
+                      
+                      // 7. AMBIL DATA USERS (jika ada)
+                      final Map<String, Map<String, dynamic>> usersData = {};
+                      if (userIds.isNotEmpty) {
+                        print('Mengambil data users...');
+                        try {
+                          // Batasi maksimal 10 user per query (Firestore limit)
+                          final userIdList = userIds.toList();
+                          for (var i = 0; i < userIdList.length; i += 10) {
+                            final batch = userIdList.sublist(
+                              i, 
+                              i + 10 > userIdList.length ? userIdList.length : i + 10
+                            );
+                            
+                            final usersSnapshot = await FirebaseFirestore.instance
+                                .collection('users')
+                                .where(FieldPath.documentId, whereIn: batch)
+                                .get();
+                            
+                            for (var doc in usersSnapshot.docs) {
+                              usersData[doc.id] = doc.data() as Map<String, dynamic>;
+                            }
+                          }
+                          print('Berhasil ambil ${usersData.length} user data');
+                        } catch (e) {
+                          print('Gagal ambil users batch: $e');
+                          // Coba satu per satu
+                          for (var userId in userIds) {
+                            try {
+                              final userDoc = await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(userId)
+                                  .get();
+                              if (userDoc.exists) {
+                                usersData[userId] = userDoc.data() as Map<String, dynamic>;
+                              }
+                            } catch (e) {
+                              print('Gagal ambil user $userId: $e');
+                            }
+                          }
+                        }
+                      }
+                      
+                      // 8. AMBIL DATA EVENTS (jika ada)
+                      final Map<String, Map<String, dynamic>> eventsData = {};
+                      if (eventIds.isNotEmpty) {
+                        print('Mengambil data events...');
+                        try {
+                          final eventIdList = eventIds.toList();
+                          for (var i = 0; i < eventIdList.length; i += 10) {
+                            final batch = eventIdList.sublist(
+                              i, 
+                              i + 10 > eventIdList.length ? eventIdList.length : i + 10
+                            );
+                            
+                            final eventsSnapshot = await FirebaseFirestore.instance
+                                .collection('events')
+                                .where(FieldPath.documentId, whereIn: batch)
+                                .get();
+                            
+                            for (var doc in eventsSnapshot.docs) {
+                              eventsData[doc.id] = doc.data() as Map<String, dynamic>;
+                            }
+                          }
+                          print('Berhasil ambil ${eventsData.length} event data');
+                        } catch (e) {
+                          print('Gagal ambil events batch: $e');
+                          // Coba satu per satu
+                          for (var eventId in eventIds) {
+                            try {
+                              final eventDoc = await FirebaseFirestore.instance
+                                  .collection('events')
+                                  .doc(eventId)
+                                  .get();
+                              if (eventDoc.exists) {
+                                eventsData[eventId] = eventDoc.data() as Map<String, dynamic>;
+                              }
+                            } catch (e) {
+                              print('Gagal ambil event $eventId: $e');
+                            }
+                          }
+                        }
+                      }
+                      
+                      // 9. BUAT FILE EXCEL
+                      print('Membuat file Excel...');
                       final excel = excel_package.Excel.createExcel();
                       final sheet = excel['Riwayat Absensi'];
                       
-                      // 3. Tambahkan header
+                      // Header
                       sheet.appendRow([
                         'ID Absensi',
-                        'ID Peserta',
-                        'Nama Peserta',
+                        'User ID',
+                        'Nama User',
+                        'Email User',
+                        'Event ID',
+                        'Nama Event',
                         'Waktu Absensi',
-                        'Status'
+                        'Status',
+                        'Tanggal (DD/MM/YYYY)'
                       ]);
                       
-                      // 4. Tambahkan data dari SQLite
-                      for (var attendance in attendanceList) {
-                        sheet.appendRow([
-                          attendance.id,
-                          attendance.participantId,
-                          attendance.participantName,
-                          attendance.attendanceTime.toString(),
-                          attendance.status,
-                        ]);
+                      // 10. PROSES SETIAP DATA
+                      int processedCount = 0;
+                      int errorCount = 0;
+                      
+                      for (var doc in absenceSnapshot.docs) {
+                        try {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final docId = doc.id;
+                          final eventId = data['event_id']?.toString() ?? '';
+                          final userId = data['user_id']?.toString() ?? '';
+                          
+                          // Ambil nama user
+                          String userName = 'User Tidak Ditemukan';
+                          String userEmail = '-';
+                          if (userId.isNotEmpty && usersData.containsKey(userId)) {
+                            final user = usersData[userId]!;
+                            userName = user['name'] ?? 
+                                      user['full_name'] ?? 
+                                      user['username'] ?? 
+                                      user['displayName'] ?? 
+                                      'User ID: $userId';
+                            userEmail = user['email'] ?? '-';
+                          } else if (userId.isNotEmpty) {
+                            userName = 'User ID: $userId';
+                          }
+                          
+                          // Ambil nama event
+                          String eventName = 'Event Tidak Ditemukan';
+                          if (eventId.isNotEmpty && eventsData.containsKey(eventId)) {
+                            final event = eventsData[eventId]!;
+                            eventName = event['event_name'] ?? 
+                                      event['title'] ?? 
+                                      event['name'] ?? 
+                                      'Event ID: $eventId';
+                          } else if (eventId.isNotEmpty) {
+                            eventName = 'Event ID: $eventId';
+                          }
+                          
+                          // Parse waktu absensi
+                          String timeStr = 'Belum absen';
+                          String dateStr = '';
+                          
+                          // Cari field timestamp
+                          final timestamp = _parseTimestamp(data);
+                          if (timestamp != null) {
+                            final date = timestamp.toDate();
+                            timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}';
+                            dateStr = '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+                          }
+                          
+                          // Status
+                          final status = data['status']?.toString() ?? 'unknown';
+                          
+                          // Tambahkan ke Excel
+                          sheet.appendRow([
+                            docId,
+                            userId,
+                            userName,
+                            userEmail,
+                            eventId,
+                            eventName,
+                            timeStr,
+                            status,
+                            dateStr,
+                          ]);
+                          
+                          processedCount++;
+                          
+                        } catch (e) {
+                          print('Error processing doc ${doc.id}: $e');
+                          errorCount++;
+                          
+                          // Tambahkan baris error
+                          sheet.appendRow([
+                            doc.id,
+                            'ERROR',
+                            'Error processing',
+                            '-',
+                            'ERROR',
+                            'Error processing',
+                            '-',
+                            'error',
+                            '-',
+                          ]);
+                        }
                       }
                       
-                      // 5. Simpan file
+                      print('Diproses: $processedCount, Error: $errorCount');
+                      
+                      // 11. SIMPAN FILE
                       final excelBytes = excel.save();
                       if (excelBytes == null) {
                         throw Exception('Gagal membuat file Excel');
                       }
                       
-                      // 6. Simpan ke file system
-                      final directory = await getTemporaryDirectory();
-                      final fileName = 'riwayat_absensi_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-                      final filePath = '${directory.path}/$fileName';
-                      
-                      final file = File(filePath);
-                      await file.writeAsBytes(excelBytes);
-                      
-                      // 7. Tutup dialog loading
+                      // 12. SIMPAN SESUAI PLATFORM
                       Navigator.pop(dialogContext);
                       
-                      // 8. Buka file
-                      await OpenFilex.open(filePath);
-                      
-                      // 9. Tampilkan notifikasi sukses
-                      ScaffoldMessenger.of(dialogContext).showSnackBar(
-                        const SnackBar(
-                          content: Text('Data berhasil diekspor! File telah disimpan.',
-                                      style: TextStyle(fontFamily: 'Poppins')),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
+                      if (uio.Platform.isAndroid || uio.Platform.isIOS) {
+                        // MOBILE
+                        final directory = await getTemporaryDirectory();
+                        final fileName = 'riwayat_absensi_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+                        final filePath = '${directory.path}/$fileName';
+                        
+                        final file = File(filePath);
+                        await file.writeAsBytes(excelBytes);
+                        await OpenFilex.open(filePath);
+                        
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          SnackBar(
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(' $processedCount data berhasil diekspor',
+                                    style: TextStyle(fontFamily: 'Poppins')),
+                                if (errorCount > 0)
+                                  Text('$errorCount data error',
+                                      style: TextStyle(fontSize: 12, color: Colors.yellow)),
+                                Text('File tersimpan di: $filePath',
+                                    style: TextStyle(fontSize: 10)),
+                              ],
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        
+                      } else {
+                        // WEB / DESKTOP
+                        final base64 = base64Encode(excelBytes);
+                        final uri = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,$base64';
+                        final anchor = html.AnchorElement(href: uri)
+                          ..setAttribute('download', 'riwayat_absensi_${DateTime.now().millisecondsSinceEpoch}.xlsx')
+                          ..click();
+                        
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          SnackBar(
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(' $processedCount data berhasil diekspor',
+                                    style: TextStyle(fontFamily: 'Poppins')),
+                                if (errorCount > 0)
+                                  Text('$errorCount data error',
+                                      style: TextStyle(fontSize: 12, color: Colors.yellow)),
+                                const Text('File sedang didownload...',
+                                    style: TextStyle(fontSize: 12)),
+                              ],
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
                       
                     } catch (e) {
                       Navigator.pop(dialogContext);
+                      
+                      print('ERROR AKHIR: $e');
+                      
                       ScaffoldMessenger.of(dialogContext).showSnackBar(
                         SnackBar(
-                          content: Text('Gagal mengekspor: ${e.toString()}', 
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Gagal mengekspor',
                                       style: TextStyle(fontFamily: 'Poppins')),
+                              Text('Error: ${e.toString().substring(0, 100)}',
+                                  style: const TextStyle(fontSize: 12)),
+                              const Text('Cek console untuk detail',
+                                  style: TextStyle(fontSize: 10)),
+                            ],
+                          ),
                           backgroundColor: Colors.red,
+                          duration: const Duration(seconds: 5),
                         ),
                       );
                     }
@@ -317,6 +681,44 @@ class AdminHomeScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Timestamp? _parseTimestamp(Map<String, dynamic> data) {
+    // Coba berbagai field yang mungkin berisi timestamp
+    final possibleFields = [
+      'absence_time',
+      'check_in_time',
+      'timestamp',
+      'created_at',
+      'time',
+      'attendance_time',
+      'date'
+    ];
+    
+    for (var field in possibleFields) {
+      final value = data[field];
+      if (value == null) continue;
+      
+      if (value is Timestamp) {
+        print('Found timestamp in field: $field');
+        return value;
+      } else if (value is Map) {
+        final map = value as Map<String, dynamic>;
+        if (map['_seconds'] != null && map['_nanoseconds'] != null) {
+          print('Found timestamp map in field: $field');
+          return Timestamp(map['_seconds'] as int, map['_nanoseconds'] as int);
+        }
+      } else if (value is String) {
+        final date = DateTime.tryParse(value);
+        if (date != null) {
+          print('Found date string in field: $field = $date');
+          return Timestamp.fromDate(date);
+        }
+      }
+    }
+    
+    print('No timestamp found in data. Available fields: ${data.keys.join(", ")}');
+    return null;
   }
 
   Widget _statsSection() {
