@@ -43,7 +43,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
   Future<void> loadEvent() async {
     try {
-      final doc = await FirebaseFirestore.instance.collection("events").doc(widget.eventId).get();
+      final doc = await FirebaseFirestore.instance
+          .collection("events")
+          .doc(widget.eventId)
+          .get();
 
       if (!doc.exists) {
         throw Exception('Event tidak ditemukan');
@@ -73,7 +76,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
       print('❌ Error loading event: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading event: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error loading event: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
         Navigator.pop(context);
       }
@@ -95,8 +101,14 @@ class _EditEventScreenState extends State<EditEventScreen> {
           child: Wrap(
             children: [
               ListTile(
-                leading: const Icon(Icons.photo_library, color: Color(0xFF594AFC)),
-                title: const Text('Pilih dari Galeri', style: TextStyle(fontFamily: 'Poppins')),
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: Color(0xFF594AFC),
+                ),
+                title: const Text(
+                  'Pilih dari Galeri',
+                  style: TextStyle(fontFamily: 'Poppins'),
+                ),
                 onTap: () async {
                   Navigator.pop(bottomSheetContext);
 
@@ -117,7 +129,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.camera_alt, color: Color(0xFF594AFC)),
-                title: const Text('Ambil Foto', style: TextStyle(fontFamily: 'Poppins')),
+                title: const Text(
+                  'Ambil Foto',
+                  style: TextStyle(fontFamily: 'Poppins'),
+                ),
                 onTap: () async {
                   Navigator.pop(bottomSheetContext);
 
@@ -138,7 +153,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.close, color: Colors.grey),
-                title: const Text('Batal', style: TextStyle(fontFamily: 'Poppins')),
+                title: const Text(
+                  'Batal',
+                  style: TextStyle(fontFamily: 'Poppins'),
+                ),
                 onTap: () => Navigator.pop(bottomSheetContext),
               ),
             ],
@@ -158,7 +176,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
         participantsC.text.isEmpty ||
         selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Semua field harus diisi"), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text("Semua field harus diisi"),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
@@ -175,7 +196,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
       if (newSelectedImage != null) {
         print('📤 Uploading new image...');
 
-        final uploadResult = await CloudinaryService.uploadImage(newSelectedImage!);
+        final uploadResult = await CloudinaryService.uploadImage(
+          newSelectedImage!,
+        );
         finalImageUrl = uploadResult['secure_url'];
         finalImagePublicId = uploadResult['public_id'];
 
@@ -185,23 +208,29 @@ class _EditEventScreenState extends State<EditEventScreen> {
       int quota = int.tryParse(quotaC.text.trim()) ?? 0;
       int participants = int.tryParse(participantsC.text.trim()) ?? 0;
 
-      await FirebaseFirestore.instance.collection("events").doc(widget.eventId).update({
-        "event_name": nameC.text.trim(),
-        "description": descC.text.trim(),
-        "location": locationC.text.trim(),
-        "organizer": organizerC.text.trim(),
-        "participants": quota,
-        "participants_count": participants,
-        "event_date": Timestamp.fromDate(selectedDate!),
-        "is_active": isActive,
-        "image_url": finalImageUrl,
-        "image_public_id": finalImagePublicId,
-        "updated_at": Timestamp.now(),
-      });
+      await FirebaseFirestore.instance
+          .collection("events")
+          .doc(widget.eventId)
+          .update({
+            "event_name": nameC.text.trim(),
+            "description": descC.text.trim(),
+            "location": locationC.text.trim(),
+            "organizer": organizerC.text.trim(),
+            "participants": quota,
+            "participants_count": participants,
+            "event_date": Timestamp.fromDate(selectedDate!),
+            "is_active": isActive,
+            "image_url": finalImageUrl,
+            "image_public_id": finalImagePublicId,
+            "updated_at": Timestamp.now(),
+          });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Event berhasil diupdate!"), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text("Event berhasil diupdate!"),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.pop(context);
       }
@@ -226,7 +255,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
   }
 
   Future<void> deleteEvent() async {
-    await FirebaseFirestore.instance.collection("events").doc(widget.eventId).delete();
+    await FirebaseFirestore.instance
+        .collection("events")
+        .doc(widget.eventId)
+        .delete();
 
     if (mounted) {
       Navigator.pop(context);
@@ -238,7 +270,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
     if (loading) {
       return const Scaffold(
         backgroundColor: Colors.white,
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF594AFC))),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF594AFC)),
+        ),
       );
     }
 
@@ -255,7 +289,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
         title: const Text(
           'Edit Event',
           style: TextStyle(
-            color: Colors.black,
+            color: Colors.white,
             fontSize: 16,
             fontWeight: FontWeight.w600,
             fontFamily: 'Poppins',
@@ -306,7 +340,11 @@ class _EditEventScreenState extends State<EditEventScreen> {
                     // ✅ FIXED: Tambah Expanded
                     child: Text(
                       'New image selected (will replace old one)',
-                      style: TextStyle(color: Colors.blue, fontSize: 12, fontFamily: 'Poppins'),
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontSize: 12,
+                        fontFamily: 'Poppins',
+                      ),
                     ),
                   ),
                   TextButton(
@@ -317,7 +355,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
                     },
                     child: const Text(
                       'Cancel',
-                      style: TextStyle(color: Colors.red, fontFamily: 'Poppins'),
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontFamily: 'Poppins',
+                      ),
                     ),
                   ),
                 ],
@@ -330,8 +371,13 @@ class _EditEventScreenState extends State<EditEventScreen> {
               child: TextButton.icon(
                 onPressed: pickNewImage,
                 icon: const Icon(Icons.edit, size: 16),
-                label: const Text('Change Image', style: TextStyle(fontFamily: 'Poppins')),
-                style: TextButton.styleFrom(foregroundColor: const Color(0xFF594AFC)),
+                label: const Text(
+                  'Change Image',
+                  style: TextStyle(fontFamily: 'Poppins'),
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF594AFC),
+                ),
               ),
             ),
 
@@ -341,7 +387,11 @@ class _EditEventScreenState extends State<EditEventScreen> {
           _buildInputField(label: 'Event Name', controller: nameC),
           const SizedBox(height: 15),
 
-          _buildInputField(label: 'Description', controller: descC, maxLines: 3),
+          _buildInputField(
+            label: 'Description',
+            controller: descC,
+            maxLines: 3,
+          ),
           const SizedBox(height: 15),
 
           _buildInputField(label: 'Location', controller: locationC),
@@ -434,7 +484,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
                       ? const SizedBox(
                           height: 24,
                           width: 24,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
                         )
                       : const Text(
                           'Update Event',
@@ -475,8 +528,13 @@ class _EditEventScreenState extends State<EditEventScreen> {
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      title: const Text('Delete Event', style: TextStyle(fontFamily: 'Poppins')),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      title: const Text(
+                        'Delete Event',
+                        style: TextStyle(fontFamily: 'Poppins'),
+                      ),
                       content: const Text(
                         'Are you sure you want to delete this event?',
                         style: TextStyle(fontFamily: 'Poppins'),
@@ -484,7 +542,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins')),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(fontFamily: 'Poppins'),
+                          ),
                         ),
                         TextButton(
                           onPressed: () {
@@ -493,7 +554,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
                           },
                           child: const Text(
                             'Delete',
-                            style: TextStyle(color: Color(0xFF9A2824), fontFamily: 'Poppins'),
+                            style: TextStyle(
+                              color: Color(0xFF9A2824),
+                              fontFamily: 'Poppins',
+                            ),
                           ),
                         ),
                       ],
@@ -535,7 +599,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
           fit: BoxFit.cover,
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF594AFC)));
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFF594AFC)),
+            );
           },
           errorBuilder: (context, error, stackTrace) {
             return const Column(
@@ -543,7 +609,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
               children: [
                 Icon(Icons.broken_image, size: 50, color: Color(0xFF9C9C9C)),
                 SizedBox(height: 8),
-                Text('Failed to load image', style: TextStyle(color: Color(0xFF9C9C9C))),
+                Text(
+                  'Failed to load image',
+                  style: TextStyle(color: Color(0xFF9C9C9C)),
+                ),
               ],
             );
           },
@@ -562,7 +631,11 @@ class _EditEventScreenState extends State<EditEventScreen> {
           SizedBox(height: 4),
           Text(
             'Tap to add image',
-            style: TextStyle(color: Color(0xFF9C9C9C), fontSize: 12, fontFamily: 'Poppins'),
+            style: TextStyle(
+              color: Color(0xFF9C9C9C),
+              fontSize: 12,
+              fontFamily: 'Poppins',
+            ),
           ),
         ],
       );
@@ -604,7 +677,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
               fontFamily: 'Poppins',
             ),
             decoration: const InputDecoration(
-              contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 15,
+                vertical: 10,
+              ),
               border: InputBorder.none,
             ),
           ),
@@ -659,7 +735,11 @@ class _EditEventScreenState extends State<EditEventScreen> {
                   ),
                 ),
                 const Spacer(),
-                const Icon(Icons.calendar_today, size: 16, color: Color(0xFF594AFC)),
+                const Icon(
+                  Icons.calendar_today,
+                  size: 16,
+                  color: Color(0xFF594AFC),
+                ),
               ],
             ),
           ),

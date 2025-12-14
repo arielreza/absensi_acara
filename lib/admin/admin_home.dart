@@ -102,7 +102,11 @@ class AdminHomeScreen extends StatelessWidget {
                     color: Colors.purple.shade50,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(Icons.person, size: 34, color: Colors.deepPurple),
+                  child: const Icon(
+                    Icons.person,
+                    size: 34,
+                    color: Colors.deepPurple,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -120,7 +124,10 @@ class AdminHomeScreen extends StatelessWidget {
                       SizedBox(height: 4),
                       Text(
                         "Manage your events and participants",
-                        style: TextStyle(color: Colors.black54, fontFamily: 'Poppins'),
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontFamily: 'Poppins',
+                        ),
                       ),
                     ],
                   ),
@@ -136,7 +143,11 @@ class AdminHomeScreen extends StatelessWidget {
 
             const Text(
               "Quick Actions",
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Poppins'),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Poppins',
+              ),
             ),
             const SizedBox(height: 12),
 
@@ -146,25 +157,40 @@ class AdminHomeScreen extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 children: [
                   _quickActionTile(Icons.qr_code_scanner, "Scan QR", () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanScreen()));
-                  }),
-                  _quickActionTile(Icons.people_alt, "Participant\nManagement", () {
-                    ScaffoldMessenger.of(
+                    Navigator.push(
                       context,
-                    ).showSnackBar(const SnackBar(content: Text("Coming Soon")));
+                      MaterialPageRoute(builder: (_) => const ScanScreen()),
+                    );
                   }),
+                  _quickActionTile(
+                    Icons.people_alt,
+                    "Participant\nManagement",
+                    () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Coming Soon")),
+                      );
+                    },
+                  ),
                   _quickActionTile(Icons.event, "Event\nManagement", () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const EventManagementScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const EventManagementScreen(),
+                      ),
                     );
                   }),
-                  _quickActionTile(Icons.insert_drive_file, "Attendance\nReport", () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AttendanceHistoryScreen()),
-                    );
-                  }),
+                  _quickActionTile(
+                    Icons.insert_drive_file,
+                    "Attendance\nReport",
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AttendanceHistoryScreen(),
+                        ),
+                      );
+                    },
+                  ),
                   _quickActionTile(Icons.upload_file, "Export\nData", () {
                     _handleExportData(context);
                   }),
@@ -176,7 +202,11 @@ class AdminHomeScreen extends StatelessWidget {
 
             const Text(
               "Active Events",
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Poppins'),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Poppins',
+              ),
             ),
             const SizedBox(height: 12),
 
@@ -193,7 +223,10 @@ class AdminHomeScreen extends StatelessWidget {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.event), label: "Event"),
-          BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner), label: "Scan"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.qr_code_scanner),
+            label: "Scan",
+          ),
         ],
         onTap: (index) {
           if (index == 1) {
@@ -202,7 +235,10 @@ class AdminHomeScreen extends StatelessWidget {
               MaterialPageRoute(builder: (_) => const EventManagementScreen()),
             );
           } else if (index == 2) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ScanScreen()),
+            );
           }
         },
       ),
@@ -235,19 +271,29 @@ class AdminHomeScreen extends StatelessWidget {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
         Navigator.pop(dialogContext);
-        _showSnackbar(dialogContext, 'Harus login terlebih dahulu', Colors.orange);
+        _showSnackbar(
+          dialogContext,
+          'Harus login terlebih dahulu',
+          Colors.orange,
+        );
         return;
       }
 
       // 2. Ambil data absences
       debugPrint('Mengambil data dari Firestore...');
-      final absenceSnapshot = await FirebaseFirestore.instance.collection('absences').get();
+      final absenceSnapshot = await FirebaseFirestore.instance
+          .collection('absences')
+          .get();
 
       debugPrint('Jumlah data ditemukan: ${absenceSnapshot.docs.length}');
 
       if (absenceSnapshot.docs.isEmpty) {
         Navigator.pop(dialogContext);
-        _showSnackbar(dialogContext, 'Tidak ada data absensi untuk diekspor', Colors.orange);
+        _showSnackbar(
+          dialogContext,
+          'Tidak ada data absensi untuk diekspor',
+          Colors.orange,
+        );
         return;
       }
 
@@ -304,7 +350,10 @@ class AdminHomeScreen extends StatelessWidget {
           if (eventId.isNotEmpty && eventsData.containsKey(eventId)) {
             final event = eventsData[eventId]!;
             eventName =
-                event['event_name'] ?? event['title'] ?? event['name'] ?? 'Event ID: $eventId';
+                event['event_name'] ??
+                event['title'] ??
+                event['name'] ??
+                'Event ID: $eventId';
           } else if (eventId.isNotEmpty) {
             eventName = 'Event ID: $eventId';
           }
@@ -364,7 +413,8 @@ class AdminHomeScreen extends StatelessWidget {
         targetDir = await getTemporaryDirectory();
       }
 
-      final fileName = 'riwayat_absensi_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+      final fileName =
+          'riwayat_absensi_${DateTime.now().millisecondsSinceEpoch}.xlsx';
       final filePath = '${targetDir.path}/$fileName';
 
       final file = File(filePath);
@@ -387,11 +437,18 @@ class AdminHomeScreen extends StatelessWidget {
 
       debugPrint('ERROR: $e');
 
-      _showSnackbar(dialogContext, 'Gagal mengekspor: ${e.toString()}', Colors.red, duration: 5);
+      _showSnackbar(
+        dialogContext,
+        'Gagal mengekspor: ${e.toString()}',
+        Colors.red,
+        duration: 5,
+      );
     }
   }
 
-  Future<Map<String, Map<String, dynamic>>> _fetchUsersData(QuerySnapshot absenceSnapshot) async {
+  Future<Map<String, Map<String, dynamic>>> _fetchUsersData(
+    QuerySnapshot absenceSnapshot,
+  ) async {
     final Map<String, Map<String, dynamic>> usersData = {};
     final Set<String> userIds = {};
 
@@ -429,7 +486,9 @@ class AdminHomeScreen extends StatelessWidget {
     return usersData;
   }
 
-  Future<Map<String, Map<String, dynamic>>> _fetchEventsData(QuerySnapshot absenceSnapshot) async {
+  Future<Map<String, Map<String, dynamic>>> _fetchEventsData(
+    QuerySnapshot absenceSnapshot,
+  ) async {
     final Map<String, Map<String, dynamic>> eventsData = {};
     final Set<String> eventIds = {};
 
@@ -501,11 +560,18 @@ class AdminHomeScreen extends StatelessWidget {
       }
     }
 
-    print('No timestamp found in data. Available fields: ${data.keys.join(", ")}');
+    print(
+      'No timestamp found in data. Available fields: ${data.keys.join(", ")}',
+    );
     return null;
   }
 
-  void _showSnackbar(BuildContext context, String message, Color color, {int duration = 3}) {
+  void _showSnackbar(
+    BuildContext context,
+    String message,
+    Color color, {
+    int duration = 3,
+  }) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message, style: const TextStyle(fontFamily: 'Poppins')),
@@ -516,29 +582,70 @@ class AdminHomeScreen extends StatelessWidget {
   }
 
   Widget _statsSection() {
-    return FutureBuilder<List<Attendance>>(
-      future: DatabaseService().getAttendanceHistory(),
+    // Real-time stats from Firestore: compute unique participants,
+    // checked-in and not-checked-in from `absences` collection.
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('absences').snapshots(),
       builder: (context, snapshot) {
-        final total = snapshot.data?.length ?? 248;
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final docs = snapshot.data?.docs ?? [];
+
+        // compute unique participant ids
+        final Set<String> participantIds = {};
+        final Set<String> checkedInIds = {};
+
+        for (var d in docs) {
+          final data = d.data() as Map<String, dynamic>?;
+          if (data == null) continue;
+          final uid = (data['user_id'] ?? '').toString();
+          if (uid.isEmpty) continue;
+          participantIds.add(uid);
+          final status = (data['status'] ?? '').toString().toLowerCase();
+          if (status == 'hadir' ||
+              status == 'checked_in' ||
+              status == 'present') {
+            checkedInIds.add(uid);
+          }
+        }
+
+        final totalParticipants = participantIds.length;
+        final checkedIn = checkedInIds.length;
+        final notCheckedIn = (totalParticipants - checkedIn).clamp(
+          0,
+          totalParticipants,
+        );
 
         return Column(
           children: [
             Row(
               children: [
                 _statCard(
-                  total.toString(),
+                  totalParticipants.toString(),
                   "Total Participant",
                   Colors.blue.shade50,
                   Colors.indigo,
                 ),
                 const SizedBox(width: 12),
-                _statCard("187", "Checked-in", Colors.orange.shade50, Colors.orange),
+                _statCard(
+                  checkedIn.toString(),
+                  "Checked-in",
+                  Colors.orange.shade50,
+                  Colors.orange,
+                ),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                _statCard("61", "Not Checked-in", Colors.green.shade50, Colors.green),
+                _statCard(
+                  notCheckedIn.toString(),
+                  "Not Checked-in",
+                  Colors.green.shade50,
+                  Colors.green,
+                ),
                 const SizedBox(width: 12),
                 FutureBuilder<int>(
                   future: _countActiveEvents(),
@@ -564,7 +671,10 @@ class AdminHomeScreen extends StatelessWidget {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -580,7 +690,11 @@ class AdminHomeScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(fontSize: 12, color: Colors.black54, fontFamily: 'Poppins'),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black54,
+                fontFamily: 'Poppins',
+              ),
             ),
           ],
         ),
@@ -603,7 +717,12 @@ class AdminHomeScreen extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.black12),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6)],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 6,
+                  ),
+                ],
               ),
               child: Icon(icon, size: 30, color: Colors.deepPurple),
             ),
@@ -704,7 +823,11 @@ class AdminHomeScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Center(
-                                  child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                                  child: Icon(
+                                    Icons.broken_image,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  ),
                                 ),
                               );
                             },
@@ -718,7 +841,10 @@ class AdminHomeScreen extends StatelessWidget {
                             child: const Center(
                               child: Text(
                                 "Event Poster Placeholder",
-                                style: TextStyle(color: Colors.white, fontFamily: 'Poppins'),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontFamily: 'Poppins',
+                                ),
                               ),
                             ),
                           ),
@@ -739,7 +865,10 @@ class AdminHomeScreen extends StatelessWidget {
 
                   Text(
                     "${date.day}/${date.month}/${date.year} • ${data["location"]}",
-                    style: const TextStyle(color: Colors.black54, fontFamily: 'Poppins'),
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontFamily: 'Poppins',
+                    ),
                   ),
 
                   const SizedBox(height: 12),
@@ -780,23 +909,42 @@ class AdminHomeScreen extends StatelessWidget {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => EditEventScreen(eventId: eventId)),
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    EditEventScreen(eventId: eventId),
+                              ),
                             );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.deepPurple,
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
                           ),
-                          child: const Text("Edit Event", style: TextStyle(fontFamily: 'Poppins')),
+                          child: const Text(
+                            "Edit Event",
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
                       OutlinedButton(
                         onPressed: () {},
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         child: const Icon(Icons.share),
                       ),
