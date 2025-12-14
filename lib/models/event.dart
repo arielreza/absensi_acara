@@ -1,5 +1,3 @@
-// lib/models/event.dart
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Event {
@@ -10,19 +8,29 @@ class Event {
   final String organizer;
   final String description;
   final bool isActive;
-  final String imageUrl;        // BARU: URL gambar dari Cloudinary
-  final String imagePublicId;   // BARU: Public ID untuk referensi
+
+  // 🔥 QUOTA & COUNT
+  final int participants; // quota
+  final int participantsCount; // sudah daftar
+
+  // IMAGE
+  final String imageUrl;
+  final String imagePublicId;
 
   Event({
     required this.id,
     required this.name,
     required this.date,
     required this.location,
-    required this.isActive,
     required this.organizer,
     required this.description,
-    this.imageUrl = '',           // Default kosong jika tidak ada gambar
-    this.imagePublicId = '',      // Default kosong
+    required this.isActive,
+
+    required this.participants,
+    required this.participantsCount,
+
+    this.imageUrl = '',
+    this.imagePublicId = '',
   });
 
   factory Event.fromFirestore(DocumentSnapshot doc) {
@@ -33,25 +41,16 @@ class Event {
       name: data['event_name'] ?? '',
       date: data['event_date'] as Timestamp,
       location: data['location'] ?? '',
-      isActive: data['is_active'] ?? false,
       organizer: data['organizer'] ?? '',
       description: data['description'] ?? '',
-      imageUrl: data['image_url'] ?? '',           // BARU
-      imagePublicId: data['image_public_id'] ?? '', // BARU
-    );
-  }
+      isActive: data['is_active'] ?? false,
 
-  factory Event.fromMap(Map<String, dynamic> map, String id) {
-    return Event(
-      id: id,
-      name: map['event_name'] ?? '',
-      date: map['event_date'] ?? '',
-      location: map['location'] ?? '',
-      isActive: true,
-      organizer: map['organizer'] ?? '',
-      description: map['description'] ?? '',
-      imageUrl: map['image_url'] ?? '',           // BARU
-      imagePublicId: map['image_public_id'] ?? '', // BARU
+      // 🔥 AMAN (DEFAULT 0)
+      participants: data['participants'] ?? 0,
+      participantsCount: data['participants_count'] ?? 0,
+
+      imageUrl: data['image_url'] ?? '',
+      imagePublicId: data['image_public_id'] ?? '',
     );
   }
 
@@ -60,11 +59,16 @@ class Event {
       'event_name': name,
       'event_date': date,
       'location': location,
-      'is_active': isActive,
       'organizer': organizer,
       'description': description,
-      'image_url': imageUrl,           // BARU
-      'image_public_id': imagePublicId, // BARU
+      'is_active': isActive,
+
+      // 🔥 SIMPAN QUOTA & COUNT
+      'participants': participants,
+      'participants_count': participantsCount,
+
+      'image_url': imageUrl,
+      'image_public_id': imagePublicId,
     };
   }
 }

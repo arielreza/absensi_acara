@@ -12,7 +12,11 @@ class DetailEventScreen extends ConsumerWidget {
   final String eventId;
   final String userId;
 
-  const DetailEventScreen({super.key, required this.eventId, required this.userId});
+  const DetailEventScreen({
+    super.key,
+    required this.eventId,
+    required this.userId,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,7 +28,9 @@ class DetailEventScreen extends ConsumerWidget {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         String status = "Daftar";
@@ -40,7 +46,9 @@ class DetailEventScreen extends ConsumerWidget {
           }
         }
 
-        final Color statusColor = (status == "Daftar") ? const Color(0xFF594AFC) : Colors.grey;
+        final Color statusColor = (status == "Daftar")
+            ? const Color(0xFF594AFC)
+            : Colors.grey;
         final parentContext = context;
 
         return StreamBuilder(
@@ -50,15 +58,20 @@ class DetailEventScreen extends ConsumerWidget {
               .snapshots(),
           builder: (context, asyncSnapshot) {
             if (asyncSnapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(body: Center(child: CircularProgressIndicator()));
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
             }
 
             if (!asyncSnapshot.hasData || asyncSnapshot.data!.docs.isEmpty) {
-              return const Scaffold(body: Center(child: Text("Event tidak ditemukan")));
+              return const Scaffold(
+                body: Center(child: Text("Event tidak ditemukan")),
+              );
             }
 
             final doc = asyncSnapshot.data!.docs.first;
             final event = Event.fromFirestore(doc);
+            final bool isFull = event.participantsCount >= event.participants;
 
             return Scaffold(
               backgroundColor: const Color(0xFFFAFAFA),
@@ -76,27 +89,33 @@ class DetailEventScreen extends ConsumerWidget {
                             Container(
                               width: double.infinity,
                               height: 300,
-                              decoration: const BoxDecoration(color: Color(0xFFD9D9D9)),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFD9D9D9),
+                              ),
                               child: event.imageUrl.isNotEmpty
                                   ? Image.network(
                                       event.imageUrl,
                                       width: double.infinity,
                                       height: 300,
                                       fit: BoxFit.cover,
-                                      loadingBuilder: (context, child, loadingProgress) {
-                                        if (loadingProgress == null) return child;
-                                        return Container(
-                                          color: const Color(0xFFD9D9D9),
-                                          child: const Center(
-                                            child: CircularProgressIndicator(
-                                              color: Color(0xFF594AFC),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return PlaceholderImage();
-                                      },
+                                      loadingBuilder:
+                                          (context, child, loadingProgress) {
+                                            if (loadingProgress == null)
+                                              return child;
+                                            return Container(
+                                              color: const Color(0xFFD9D9D9),
+                                              child: const Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      color: Color(0xFF594AFC),
+                                                    ),
+                                              ),
+                                            );
+                                          },
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return PlaceholderImage();
+                                          },
                                     )
                                   : PlaceholderImage(),
                             ),
@@ -128,7 +147,10 @@ class DetailEventScreen extends ConsumerWidget {
                                   shape: BoxShape.circle,
                                 ),
                                 child: IconButton(
-                                  icon: const Icon(Icons.arrow_back, color: Colors.black),
+                                  icon: const Icon(
+                                    Icons.arrow_back,
+                                    color: Colors.black,
+                                  ),
                                   onPressed: () => Navigator.pop(context),
                                 ),
                               ),
@@ -142,7 +164,10 @@ class DetailEventScreen extends ConsumerWidget {
                                   shape: BoxShape.circle,
                                 ),
                                 child: IconButton(
-                                  icon: const Icon(Icons.share, color: Colors.black),
+                                  icon: const Icon(
+                                    Icons.share,
+                                    color: Colors.black,
+                                  ),
                                   onPressed: () {},
                                 ),
                               ),
@@ -156,7 +181,10 @@ class DetailEventScreen extends ConsumerWidget {
                                   shape: BoxShape.circle,
                                 ),
                                 child: IconButton(
-                                  icon: const Icon(Icons.favorite_border, color: Colors.black),
+                                  icon: const Icon(
+                                    Icons.favorite_border,
+                                    color: Colors.black,
+                                  ),
                                   onPressed: () {},
                                 ),
                               ),
@@ -194,7 +222,9 @@ class DetailEventScreen extends ConsumerWidget {
                                   Container(
                                     width: 5,
                                     height: 5,
-                                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
                                     decoration: const BoxDecoration(
                                       color: Color(0xFF594AFC),
                                       shape: BoxShape.circle,
@@ -226,7 +256,10 @@ class DetailEventScreen extends ConsumerWidget {
                         // Organizer Section
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 16,
+                          ),
                           decoration: const BoxDecoration(
                             border: Border(
                               top: BorderSide(color: Color(0x33CACACA)),
@@ -288,14 +321,20 @@ class DetailEventScreen extends ConsumerWidget {
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(color: Colors.black),
                                 ),
                                 child: const Text(
                                   'Follow',
-                                  style: TextStyle(fontSize: 12, fontFamily: 'Poppins'),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontFamily: 'Poppins',
+                                  ),
                                 ),
                               ),
                             ],
@@ -307,7 +346,9 @@ class DetailEventScreen extends ConsumerWidget {
                           width: double.infinity,
                           padding: const EdgeInsets.all(24),
                           decoration: const BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Color(0x33CACACA))),
+                            border: Border(
+                              bottom: BorderSide(color: Color(0x33CACACA)),
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -436,7 +477,8 @@ class DetailEventScreen extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: 10),
                                     Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         const Icon(
                                           Icons.location_on,
@@ -475,7 +517,10 @@ class DetailEventScreen extends ConsumerWidget {
                     right: 0,
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 20,
+                      ),
                       decoration: const BoxDecoration(
                         color: Colors.white,
                         boxShadow: [
@@ -513,30 +558,60 @@ class DetailEventScreen extends ConsumerWidget {
                             ],
                           ),
                           ElevatedButton(
-                            onPressed: status == "Daftar"
+                            onPressed: (status == "Daftar" && !isFull)
                                 ? () async {
-                                    await ref
-                                        .read(eventRegisterService)
-                                        .daftarEvent(eventId: eventId, userId: userId);
+                                    try {
+                                      await ref
+                                          .read(eventRegisterService)
+                                          .daftarEvent(
+                                            eventId: eventId,
+                                            userId: userId,
+                                          );
 
-                                    Navigator.push(
-                                      parentContext,
-                                      MaterialPageRoute(builder: (_) => const SuccessScreen()),
-                                    );
+                                      Navigator.push(
+                                        parentContext,
+                                        MaterialPageRoute(
+                                          builder: (_) => const SuccessScreen(),
+                                        ),
+                                      );
+                                    } catch (e) {
+                                      if (e.toString().contains("EVENT_FULL")) {
+                                        showDialog(
+                                          context: parentContext,
+                                          builder: (_) => AlertDialog(
+                                            title: const Text("Event Penuh"),
+                                            content: const Text(
+                                              "Maaf, kuota peserta untuk event ini sudah terpenuhi.",
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                  parentContext,
+                                                ),
+                                                child: const Text("OK"),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }
+                                    }
                                   }
                                 : null,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: statusColor,
+                              backgroundColor: (status == "Daftar" && !isFull)
+                                  ? const Color(0xFF594AFC)
+                                  : Colors.grey,
                               disabledBackgroundColor: Colors.grey,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                              elevation: 5,
-                              shadowColor: const Color(0x11000000),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 14,
+                              ),
                             ),
                             child: Text(
-                              status,
+                              isFull ? "Event Full" : status,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,
