@@ -1,23 +1,22 @@
 // lib/admin/admin_home.dart
 
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:excel/excel.dart' as excel_package;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
+
+import '../models/attendance.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
-import '../models/attendance.dart';
-
-import 'scan_screen.dart';
 import 'attendance_history.dart';
-import 'event_management_screen.dart';
 import 'edit_event_screen.dart';
-
-import 'dart:io';
-import 'package:excel/excel.dart' as excel_package;
-import 'package:path_provider/path_provider.dart';
-import 'package:open_filex/open_filex.dart';
+import 'event_management_screen.dart';
+import 'scan_screen.dart';
 
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key});
@@ -43,8 +42,9 @@ class AdminHomeScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Batal', style: TextStyle(fontFamily: 'Poppins'))),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Batal', style: TextStyle(fontFamily: 'Poppins')),
+          ),
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
@@ -120,10 +120,7 @@ class AdminHomeScreen extends StatelessWidget {
                       SizedBox(height: 4),
                       Text(
                         "Manage your events and participants",
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontFamily: 'Poppins',
-                        ),
+                        style: TextStyle(color: Colors.black54, fontFamily: 'Poppins'),
                       ),
                     ],
                   ),
@@ -139,11 +136,7 @@ class AdminHomeScreen extends StatelessWidget {
 
             const Text(
               "Quick Actions",
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Poppins',
-              ),
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Poppins'),
             ),
             const SizedBox(height: 12),
 
@@ -153,15 +146,12 @@ class AdminHomeScreen extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 children: [
                   _quickActionTile(Icons.qr_code_scanner, "Scan QR", () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ScanScreen()),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanScreen()));
                   }),
                   _quickActionTile(Icons.people_alt, "Participant\nManagement", () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Coming Soon")),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(const SnackBar(content: Text("Coming Soon")));
                   }),
                   _quickActionTile(Icons.event, "Event\nManagement", () {
                     Navigator.push(
@@ -186,11 +176,7 @@ class AdminHomeScreen extends StatelessWidget {
 
             const Text(
               "Active Events",
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Poppins',
-              ),
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Poppins'),
             ),
             const SizedBox(height: 12),
 
@@ -216,10 +202,7 @@ class AdminHomeScreen extends StatelessWidget {
               MaterialPageRoute(builder: (_) => const EventManagementScreen()),
             );
           } else if (index == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ScanScreen()),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanScreen()));
           }
         },
       ),
@@ -229,7 +212,7 @@ class AdminHomeScreen extends StatelessWidget {
   // ===================== FUNGSI EKSPOR DATA (MOBILE ONLY) =====================
   Future<void> _handleExportData(BuildContext context) async {
     final dialogContext = context;
-    
+
     // Tampilkan loading dialog
     showDialog(
       context: dialogContext,
@@ -247,7 +230,7 @@ class AdminHomeScreen extends StatelessWidget {
 
     try {
       debugPrint('=== MULAI EKSPOR DATA MOBILE ===');
-      
+
       // 1. Cek autentikasi
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
@@ -255,30 +238,28 @@ class AdminHomeScreen extends StatelessWidget {
         _showSnackbar(dialogContext, 'Harus login terlebih dahulu', Colors.orange);
         return;
       }
-      
+
       // 2. Ambil data absences
       debugPrint('Mengambil data dari Firestore...');
-      final absenceSnapshot = await FirebaseFirestore.instance
-          .collection('absences')
-          .get();
-      
+      final absenceSnapshot = await FirebaseFirestore.instance.collection('absences').get();
+
       debugPrint('Jumlah data ditemukan: ${absenceSnapshot.docs.length}');
-      
+
       if (absenceSnapshot.docs.isEmpty) {
         Navigator.pop(dialogContext);
         _showSnackbar(dialogContext, 'Tidak ada data absensi untuk diekspor', Colors.orange);
         return;
       }
-      
+
       // 3. Ambil data users dan events untuk referensi
       final usersData = await _fetchUsersData(absenceSnapshot);
       final eventsData = await _fetchEventsData(absenceSnapshot);
-      
+
       // 4. Buat file Excel
       debugPrint('Membuat file Excel...');
       final excel = excel_package.Excel.createExcel();
       final sheet = excel['Riwayat Absensi'];
-      
+
       // Header
       sheet.appendRow([
         'ID Absensi',
@@ -289,63 +270,64 @@ class AdminHomeScreen extends StatelessWidget {
         'Nama Event',
         'Waktu Absensi',
         'Status',
-        'Tanggal (DD/MM/YYYY)'
+        'Tanggal (DD/MM/YYYY)',
       ]);
-      
+
       // 5. Proses data
       int processedCount = 0;
-      
+
       for (var doc in absenceSnapshot.docs) {
         try {
-          final data = doc.data() as Map<String, dynamic>;
+          final data = doc.data();
           final docId = doc.id;
           final eventId = data['event_id']?.toString() ?? '';
           final userId = data['user_id']?.toString() ?? '';
-          
+
           // Ambil nama user
           String userName = 'User Tidak Ditemukan';
           String userEmail = '-';
           if (userId.isNotEmpty && usersData.containsKey(userId)) {
             final user = usersData[userId]!;
-            userName = user['name'] ?? 
-                      user['full_name'] ?? 
-                      user['username'] ?? 
-                      user['displayName'] ?? 
-                      'User ID: $userId';
+            userName =
+                user['name'] ??
+                user['full_name'] ??
+                user['username'] ??
+                user['displayName'] ??
+                'User ID: $userId';
             userEmail = user['email'] ?? '-';
           } else if (userId.isNotEmpty) {
             userName = 'User ID: $userId';
           }
-          
+
           // Ambil nama event
           String eventName = 'Event Tidak Ditemukan';
           if (eventId.isNotEmpty && eventsData.containsKey(eventId)) {
             final event = eventsData[eventId]!;
-            eventName = event['event_name'] ?? 
-                      event['title'] ?? 
-                      event['name'] ?? 
-                      'Event ID: $eventId';
+            eventName =
+                event['event_name'] ?? event['title'] ?? event['name'] ?? 'Event ID: $eventId';
           } else if (eventId.isNotEmpty) {
             eventName = 'Event ID: $eventId';
           }
-          
+
           // Parse waktu
           String timeStr = 'Belum absen';
           String dateStr = '';
-          
+
           // Cari field timestamp
           final timestamp = _parseTimestamp(data);
           if (timestamp != null) {
             final date = timestamp.toDate();
-            timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}';
-            dateStr = '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+            timeStr =
+                '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}';
+            dateStr =
+                '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
           }
-          
+
           // Status
           final status = data['status']?.toString() ?? 'hadir';
-          
+
           // Tambahkan ke Excel
-            sheet.appendRow([
+          sheet.appendRow([
             docId,
             userId,
             userName,
@@ -356,24 +338,23 @@ class AdminHomeScreen extends StatelessWidget {
             status,
             dateStr,
           ]);
-          
+
           processedCount++;
-          
         } catch (e) {
           debugPrint('Error processing document ${doc.id}: $e');
         }
       }
-      
+
       // 6. Simpan file
       final excelBytes = excel.save();
       if (excelBytes == null) {
         throw Exception('Gagal membuat file Excel');
       }
-      
+
       // 7. Simpan ke storage mobile
       final directory = await getExternalStorageDirectory();
       final downloadsDir = Directory('/storage/emulated/0/Download');
-      
+
       Directory targetDir;
       if (downloadsDir.existsSync()) {
         targetDir = downloadsDir;
@@ -382,113 +363,107 @@ class AdminHomeScreen extends StatelessWidget {
       } else {
         targetDir = await getTemporaryDirectory();
       }
-      
+
       final fileName = 'riwayat_absensi_${DateTime.now().millisecondsSinceEpoch}.xlsx';
       final filePath = '${targetDir.path}/$fileName';
-      
+
       final file = File(filePath);
       await file.writeAsBytes(excelBytes);
-      
+
       // 8. Buka file
       await OpenFilex.open(filePath);
-      
+
       // 9. Tampilkan hasil
       Navigator.pop(dialogContext);
-      
+
       _showSnackbar(
         dialogContext,
         '$processedCount data berhasil diekspor\nFile tersimpan di: ${targetDir.path}',
         Colors.green,
         duration: 5,
       );
-      
     } catch (e) {
       Navigator.pop(dialogContext);
-      
+
       debugPrint('ERROR: $e');
-      
-      _showSnackbar(
-        dialogContext,
-        'Gagal mengekspor: ${e.toString()}',
-        Colors.red,
-        duration: 5,
-      );
+
+      _showSnackbar(dialogContext, 'Gagal mengekspor: ${e.toString()}', Colors.red, duration: 5);
     }
   }
 
   Future<Map<String, Map<String, dynamic>>> _fetchUsersData(QuerySnapshot absenceSnapshot) async {
     final Map<String, Map<String, dynamic>> usersData = {};
     final Set<String> userIds = {};
-    
+
     // Kumpulkan semua user ID
     for (var doc in absenceSnapshot.docs) {
       final data = doc.data() as Map<String, dynamic>;
       final userId = data['user_id']?.toString() ?? '';
       if (userId.isNotEmpty) userIds.add(userId);
     }
-    
+
     if (userIds.isEmpty) return usersData;
-    
+
     // Ambil data users (batch untuk efisiensi)
     try {
       final userIdList = userIds.toList();
       for (var i = 0; i < userIdList.length; i += 10) {
         final batch = userIdList.sublist(
-          i, 
-          i + 10 > userIdList.length ? userIdList.length : i + 10
+          i,
+          i + 10 > userIdList.length ? userIdList.length : i + 10,
         );
-        
+
         final usersSnapshot = await FirebaseFirestore.instance
             .collection('users')
             .where(FieldPath.documentId, whereIn: batch)
             .get();
-        
+
         for (var doc in usersSnapshot.docs) {
-          usersData[doc.id] = doc.data() as Map<String, dynamic>;
+          usersData[doc.id] = doc.data();
         }
       }
     } catch (e) {
       debugPrint('Error fetching users: $e');
     }
-    
+
     return usersData;
   }
 
   Future<Map<String, Map<String, dynamic>>> _fetchEventsData(QuerySnapshot absenceSnapshot) async {
     final Map<String, Map<String, dynamic>> eventsData = {};
     final Set<String> eventIds = {};
-    
+
     // Kumpulkan semua event ID
     for (var doc in absenceSnapshot.docs) {
       final data = doc.data() as Map<String, dynamic>;
       final eventId = data['event_id']?.toString() ?? '';
       if (eventId.isNotEmpty) eventIds.add(eventId);
     }
-    
+
     if (eventIds.isEmpty) return eventsData;
-    
+
     // Ambil data events
     try {
       final eventIdList = eventIds.toList();
       for (var i = 0; i < eventIdList.length; i += 10) {
         final batch = eventIdList.sublist(
-          i, 
-          i + 10 > eventIdList.length ? eventIdList.length : i + 10
+          i,
+          i + 10 > eventIdList.length ? eventIdList.length : i + 10,
         );
-        
+
         final eventsSnapshot = await FirebaseFirestore.instance
             .collection('events')
             .where(FieldPath.documentId, whereIn: batch)
             .get();
-        
+
         for (var doc in eventsSnapshot.docs) {
-          eventsData[doc.id] = doc.data() as Map<String, dynamic>;
+          eventsData[doc.id] = doc.data();
         }
       }
     } catch (e) {
       debugPrint('Error fetching events: $e');
     }
-    
+
     return eventsData;
   }
 
@@ -501,13 +476,13 @@ class AdminHomeScreen extends StatelessWidget {
       'created_at',
       'time',
       'attendance_time',
-      'date'
+      'date',
     ];
-    
+
     for (var field in possibleFields) {
       final value = data[field];
       if (value == null) continue;
-      
+
       if (value is Timestamp) {
         print('Found timestamp in field: $field');
         return value;
@@ -525,7 +500,7 @@ class AdminHomeScreen extends StatelessWidget {
         }
       }
     }
-    
+
     print('No timestamp found in data. Available fields: ${data.keys.join(", ")}');
     return null;
   }
@@ -576,9 +551,9 @@ class AdminHomeScreen extends StatelessWidget {
                       Colors.purple,
                     );
                   },
-                )
+                ),
               ],
-            )
+            ),
           ],
         );
       },
@@ -589,10 +564,7 @@ class AdminHomeScreen extends StatelessWidget {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(12),
-        ),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -608,11 +580,7 @@ class AdminHomeScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black54,
-                fontFamily: 'Poppins',
-              ),
+              style: const TextStyle(fontSize: 12, color: Colors.black54, fontFamily: 'Poppins'),
             ),
           ],
         ),
@@ -635,9 +603,7 @@ class AdminHomeScreen extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.black12),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6)
-                ],
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6)],
               ),
               child: Icon(icon, size: 30, color: Colors.deepPurple),
             ),
@@ -699,7 +665,7 @@ class AdminHomeScreen extends StatelessWidget {
                     color: Colors.black.withOpacity(.05),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
-                  )
+                  ),
                 ],
               ),
               child: Column(
@@ -752,10 +718,7 @@ class AdminHomeScreen extends StatelessWidget {
                             child: const Center(
                               child: Text(
                                 "Event Poster Placeholder",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontFamily: 'Poppins',
-                                ),
+                                style: TextStyle(color: Colors.white, fontFamily: 'Poppins'),
                               ),
                             ),
                           ),
@@ -776,10 +739,7 @@ class AdminHomeScreen extends StatelessWidget {
 
                   Text(
                     "${date.day}/${date.month}/${date.year} • ${data["location"]}",
-                    style: const TextStyle(
-                      color: Colors.black54,
-                      fontFamily: 'Poppins',
-                    ),
+                    style: const TextStyle(color: Colors.black54, fontFamily: 'Poppins'),
                   ),
 
                   const SizedBox(height: 12),
@@ -820,22 +780,15 @@ class AdminHomeScreen extends StatelessWidget {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (_) => EditEventScreen(eventId: eventId),
-                              ),
+                              MaterialPageRoute(builder: (_) => EditEventScreen(eventId: eventId)),
                             );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.deepPurple,
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: const Text(
-                            "Edit Event",
-                            style: TextStyle(fontFamily: 'Poppins'),
-                          ),
+                          child: const Text("Edit Event", style: TextStyle(fontFamily: 'Poppins')),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -843,14 +796,12 @@ class AdminHomeScreen extends StatelessWidget {
                         onPressed: () {},
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: const Icon(Icons.share),
-                      )
+                      ),
                     ],
-                  )
+                  ),
                 ],
               ),
             );

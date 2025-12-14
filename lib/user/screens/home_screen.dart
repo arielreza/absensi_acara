@@ -437,6 +437,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     .where('is_active', isEqualTo: true)
                     .snapshots(),
                 builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                  double sectionHeight = 280;
                   if (snapshot.hasError) {
                     return Center(
                       child: Text("Error loading data", style: TextStyle(color: Colors.red)),
@@ -463,25 +464,26 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   }
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.72,
-                        crossAxisSpacing: 19,
-                        mainAxisSpacing: 20,
-                      ),
+                  return SizedBox(
+                    height: sectionHeight,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 5),
                       itemCount: filteredDocs.length,
                       itemBuilder: (context, index) {
                         final doc = filteredDocs[index];
                         final event = Event.fromFirestore(doc);
                         final data = doc.data() as Map<String, dynamic>;
+
+                        // Fallback image handling
                         final imageUrl = data['image_url'] as String? ?? event.imageUrl;
 
-                        return _buildVerticalEventCard(event, imageUrl, user?.uid ?? '');
+                        return EventCard(
+                          event: event,
+                          eventId: event.id,
+                          imageUrl: imageUrl,
+                          userId: user?.uid ?? '',
+                        );
                       },
                     ),
                   );
