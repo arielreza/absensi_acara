@@ -1,4 +1,5 @@
 import 'package:absensi_acara/services/auth_service.dart';
+import 'package:absensi_acara/user/widgets/logout.dart';
 import 'package:absensi_acara/user/widgets/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,8 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.read<AuthService>();
+
     return FutureBuilder<Map<String, dynamic>?>(
       future: context.read<AuthService>().getUserData(),
       builder: (context, snapshot) {
@@ -25,28 +28,43 @@ class ProfileScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: Colors.blue,
-                child: const Icon(Icons.person, color: Colors.white, size: 40),
-              ),
+              const SizedBox(height: 42),
+              Image.asset('assets/images/profile.png', width: 100, height: 100),
               const SizedBox(height: 16),
               Text(
-                data['email'] ?? context.read<AuthService>().currentUser?.email ?? 'User',
+                data['name'] ?? context.read<AuthService>().currentUser?.email ?? 'User',
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 4),
-              ProfileInfoCard(
-                title: "Nama Lengkap",
-                value: data["name"] ?? "-",
-                icon: Icons.person,
+              const SizedBox(height: 32),
+              ProfileInfoCard(title: "Nama Lengkap", value: data["name"] ?? "-"),
+              const SizedBox(height: 12),
+              ProfileInfoCard(title: "NIM", value: data["nim"] ?? "-"),
+              const SizedBox(height: 12),
+              ProfileInfoCard(title: 'Email', value: data['email'] ?? '-'),
+              const SizedBox(height: 12),
+              ProfileInfoCard(title: 'Status', value: 'Aktif'),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () => showLogoutDialog(context, auth),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6C4AFF),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Log out",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
-              ProfileInfoCard(title: "NIM", value: data["nim"] ?? "-", icon: Icons.badge),
-              const SizedBox(height: 12),
-              ProfileInfoCard(title: 'Email', value: data['email'] ?? '-', icon: Icons.email),
-              const SizedBox(height: 12),
-              ProfileInfoCard(title: 'Status', value: 'Aktif', icon: Icons.check_circle),
             ],
           ),
         );

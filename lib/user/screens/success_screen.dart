@@ -68,7 +68,7 @@ class SuccessScreen extends StatelessWidget {
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const UserHomeScreen(initialTab: 2), // tab 2 = history
+                          builder: (_) => const UserHomeScreen(initialTab: 1), // tab 2 = history
                         ),
                         (route) => false,
                       );

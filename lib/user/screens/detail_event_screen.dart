@@ -3,6 +3,7 @@
 import 'package:absensi_acara/models/event.dart';
 import 'package:absensi_acara/user/screens/success_screen.dart';
 import 'package:absensi_acara/user/service/event_register_service.dart';
+import 'package:absensi_acara/user/widgets/placeholder_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,9 +24,7 @@ class DetailEventScreen extends ConsumerWidget {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
         String status = "Daftar";
@@ -51,15 +50,11 @@ class DetailEventScreen extends ConsumerWidget {
               .snapshots(),
           builder: (context, asyncSnapshot) {
             if (asyncSnapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
+              return const Scaffold(body: Center(child: CircularProgressIndicator()));
             }
 
             if (!asyncSnapshot.hasData || asyncSnapshot.data!.docs.isEmpty) {
-              return const Scaffold(
-                body: Center(child: Text("Event tidak ditemukan")),
-              );
+              return const Scaffold(body: Center(child: Text("Event tidak ditemukan")));
             }
 
             final doc = asyncSnapshot.data!.docs.first;
@@ -81,9 +76,7 @@ class DetailEventScreen extends ConsumerWidget {
                             Container(
                               width: double.infinity,
                               height: 300,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFD9D9D9),
-                              ),
+                              decoration: const BoxDecoration(color: Color(0xFFD9D9D9)),
                               child: event.imageUrl.isNotEmpty
                                   ? Image.network(
                                       event.imageUrl,
@@ -102,12 +95,12 @@ class DetailEventScreen extends ConsumerWidget {
                                         );
                                       },
                                       errorBuilder: (context, error, stackTrace) {
-                                        return _buildPlaceholderImage();
+                                        return PlaceholderImage();
                                       },
                                     )
-                                  : _buildPlaceholderImage(),
+                                  : PlaceholderImage(),
                             ),
-                            
+
                             // Gradient Overlay untuk readability
                             Container(
                               width: double.infinity,
@@ -124,7 +117,7 @@ class DetailEventScreen extends ConsumerWidget {
                                 ),
                               ),
                             ),
-                            
+
                             // Top Icons
                             Positioned(
                               top: 50,
@@ -302,10 +295,7 @@ class DetailEventScreen extends ConsumerWidget {
                                 ),
                                 child: const Text(
                                   'Follow',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontFamily: 'Poppins',
-                                  ),
+                                  style: TextStyle(fontSize: 12, fontFamily: 'Poppins'),
                                 ),
                               ),
                             ],
@@ -317,9 +307,7 @@ class DetailEventScreen extends ConsumerWidget {
                           width: double.infinity,
                           padding: const EdgeInsets.all(24),
                           decoration: const BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: Color(0x33CACACA)),
-                            ),
+                            border: Border(bottom: BorderSide(color: Color(0x33CACACA))),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,10 +399,14 @@ class DetailEventScreen extends ConsumerWidget {
                                     const SizedBox(height: 15),
                                     Row(
                                       children: [
-                                        const Icon(Icons.calendar_today, size: 14),
+                                        const Icon(
+                                          Icons.calendar_today,
+                                          size: 14,
+                                          color: Colors.deepPurpleAccent,
+                                        ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          'Next date ${event.date}',
+                                          '1 January 2025',
                                           style: const TextStyle(
                                             fontSize: 12,
                                             color: Colors.black,
@@ -426,7 +418,11 @@ class DetailEventScreen extends ConsumerWidget {
                                     const SizedBox(height: 10),
                                     const Row(
                                       children: [
-                                        Icon(Icons.access_time, size: 14),
+                                        Icon(
+                                          Icons.access_time,
+                                          size: 14,
+                                          color: Colors.deepPurpleAccent,
+                                        ),
                                         SizedBox(width: 8),
                                         Text(
                                           '2 hours',
@@ -442,7 +438,11 @@ class DetailEventScreen extends ConsumerWidget {
                                     Row(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Icon(Icons.location_on, size: 14),
+                                        const Icon(
+                                          Icons.location_on,
+                                          size: 14,
+                                          color: Colors.deepPurpleAccent,
+                                        ),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
@@ -521,9 +521,7 @@ class DetailEventScreen extends ConsumerWidget {
 
                                     Navigator.push(
                                       parentContext,
-                                      MaterialPageRoute(
-                                        builder: (_) => const SuccessScreen(),
-                                      ),
+                                      MaterialPageRoute(builder: (_) => const SuccessScreen()),
                                     );
                                   }
                                 : null,
@@ -533,10 +531,7 @@ class DetailEventScreen extends ConsumerWidget {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 32,
-                                vertical: 14,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                               elevation: 5,
                               shadowColor: const Color(0x11000000),
                             ),
@@ -560,16 +555,6 @@ class DetailEventScreen extends ConsumerWidget {
           },
         );
       },
-    );
-  }
-
-  // Placeholder jika tidak ada gambar
-  Widget _buildPlaceholderImage() {
-    return Container(
-      color: const Color(0xFFD9D9D9),
-      child: const Center(
-        child: Icon(Icons.image, size: 80, color: Colors.white),
-      ),
     );
   }
 }

@@ -1,9 +1,11 @@
 // lib/admin/add_event_screen.dart
 
 import 'dart:io';
-import 'package:flutter/material.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
 import '../services/cloudinary_service.dart';
 
 class AddEventScreen extends StatefulWidget {
@@ -22,7 +24,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
 
   DateTime? selectedDate = DateTime.now();
   bool isActive = true;
-  
+
   // IMAGE STATE
   File? selectedImage;
   bool isUploadingImage = false;
@@ -45,7 +47,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
   // FUNGSI PILIH GAMBAR
   Future<void> pickImage() async {
     print('🔍 Opening image picker...'); // Debug
-    
+
     final result = await showModalBottomSheet<File?>(
       context: context,
       backgroundColor: Colors.white,
@@ -61,14 +63,14 @@ class _AddEventScreenState extends State<AddEventScreen> {
                 title: const Text('Pilih dari Galeri', style: TextStyle(fontFamily: 'Poppins')),
                 onTap: () async {
                   Navigator.pop(bottomSheetContext); // Tutup bottom sheet dulu
-                  
+
                   final XFile? image = await ImagePicker().pickImage(
                     source: ImageSource.gallery,
                     maxWidth: 1920,
                     maxHeight: 1080,
                     imageQuality: 85,
                   );
-                  
+
                   if (image != null && mounted) {
                     final file = File(image.path);
                     print('✅ Image selected: ${image.path}');
@@ -85,14 +87,14 @@ class _AddEventScreenState extends State<AddEventScreen> {
                 title: const Text('Ambil Foto', style: TextStyle(fontFamily: 'Poppins')),
                 onTap: () async {
                   Navigator.pop(bottomSheetContext);
-                  
+
                   final XFile? image = await ImagePicker().pickImage(
                     source: ImageSource.camera,
                     maxWidth: 1920,
                     maxHeight: 1080,
                     imageQuality: 85,
                   );
-                  
+
                   if (image != null && mounted) {
                     final file = File(image.path);
                     print('✅ Photo taken: ${image.path}');
@@ -125,9 +127,9 @@ class _AddEventScreenState extends State<AddEventScreen> {
         organizerC.text.isEmpty ||
         quotaC.text.isEmpty ||
         selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Harap lengkapi semua data")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Harap lengkapi semua data")));
       return;
     }
 
@@ -158,26 +160,20 @@ class _AddEventScreenState extends State<AddEventScreen> {
         "participants_count": 0,
         "event_date": Timestamp.fromDate(selectedDate!),
         "is_active": isActive,
-        "image_url": imageUrl,           // URL gambar dari Cloudinary
+        "image_url": imageUrl, // URL gambar dari Cloudinary
         "image_public_id": imagePublicId, // Public ID untuk referensi
         "created_at": Timestamp.now(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Event berhasil ditambahkan!"),
-          backgroundColor: Colors.green,
-        ),
+        const SnackBar(content: Text("Event berhasil ditambahkan!"), backgroundColor: Colors.green),
       );
 
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error: $e"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red));
     } finally {
       setState(() {
         isUploadingImage = false;
@@ -211,7 +207,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 24),
         children: [
           const SizedBox(height: 24),
-          
+
           // ===================== IMAGE PICKER =====================
           const Text(
             'Event Image',
@@ -223,7 +219,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          
+
           InkWell(
             onTap: isUploadingImage ? null : pickImage,
             borderRadius: BorderRadius.circular(15),
@@ -238,10 +234,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
               child: selectedImage != null
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(15),
-                      child: Image.file(
-                        selectedImage!,
-                        fit: BoxFit.cover,
-                      ),
+                      child: Image.file(selectedImage!, fit: BoxFit.cover),
                     )
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -250,16 +243,13 @@ class _AddEventScreenState extends State<AddEventScreen> {
                         SizedBox(height: 8),
                         Text(
                           'Tap to select image',
-                          style: TextStyle(
-                            color: Color(0xFF9C9C9C),
-                            fontFamily: 'Poppins',
-                          ),
+                          style: TextStyle(color: Color(0xFF9C9C9C), fontFamily: 'Poppins'),
                         ),
                       ],
                     ),
             ),
           ),
-          
+
           if (selectedImage != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -286,22 +276,22 @@ class _AddEventScreenState extends State<AddEventScreen> {
                 ],
               ),
             ),
-          
+
           const SizedBox(height: 20),
-          
+
           // ===================== FORM FIELDS =====================
           _buildInputField(label: 'Event Name', controller: nameC),
           const SizedBox(height: 15),
-          
+
           _buildInputField(label: 'Description', controller: descC, maxLines: 3),
           const SizedBox(height: 15),
-          
+
           _buildInputField(label: 'Location', controller: locationC),
           const SizedBox(height: 15),
-          
+
           _buildInputField(label: 'Organizer', controller: organizerC),
           const SizedBox(height: 15),
-          
+
           _buildInputField(
             label: 'Participants Quota',
             controller: quotaC,
@@ -325,7 +315,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
             ),
             value: isActive,
             onChanged: (v) => setState(() => isActive = v),
-            activeColor: const Color(0xFF594AFC),
+            activeThumbColor: const Color(0xFF594AFC),
           ),
 
           const SizedBox(height: 30),
@@ -354,10 +344,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
                       ? const SizedBox(
                           height: 24,
                           width: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
                       : const Text(
                           'Save Event',

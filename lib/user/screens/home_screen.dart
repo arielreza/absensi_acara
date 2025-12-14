@@ -15,19 +15,15 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   // --- STATE VARIABLES ---
-
-  // Category State
   String selectedCategory = 'All';
   final List<String> categories = ['All', 'Music', 'Art', 'Workshop'];
-
-  // Search Controller
   final TextEditingController _searchController = TextEditingController();
 
   // Active Filter States
   String searchQuery = '';
-  DateTime? _filterDate; // Filter: Tanggal Spesifik
-  String _filterTimeStatus = 'All'; // Filter: 'All', 'Upcoming', 'Past'
-  bool _filterAvailableOnly = false; // Filter: Hanya yang belum full
+  DateTime? _filterDate;
+  String _filterTimeStatus = 'All'; // 'All', 'Upcoming', 'Past'
+  bool _filterAvailableOnly = false;
 
   @override
   void dispose() {
@@ -35,121 +31,105 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // --- CORE FILTER LOGIC ---
+  // --- CORE FILTER LOGIC (DIPERBAIKI AGAR AMAN DARI ERROR DATABASE) ---
   bool _shouldShowEvent(DocumentSnapshot doc, bool isCategorySection) {
-    final data = doc.data() as Map<String, dynamic>;
-    final event = Event.fromFirestore(doc);
+    try {
+      final data = doc.data() as Map<String, dynamic>?;
+      if (data == null) return false;
 
-    // 1. Konversi Tanggal Event ke DateTime
-    DateTime eventDate = (event.date).toDate();
-    DateTime now = DateTime.now();
+      // Gunakan model Event untuk parsing aman
+      final event = Event.fromFirestore(doc);
 
-    // 2. Filter Kategori (Hanya berlaku untuk Section Category di bawah)
-    if (isCategorySection && selectedCategory != 'All') {
-      final category = data['category']?.toString() ?? 'Other';
-      if (category.toLowerCase() != selectedCategory.toLowerCase()) return false;
+      // KONVERSI TANGGAL YANG AMAN (Handle Timestamp atau DateTime)
+      DateTime eventDate;
+      eventDate = (event.date).toDate();
+
+      DateTime now = DateTime.now();
+
+      // 1. Filter Kategori (Hanya untuk Section Bawah/Grid)
+      if (isCategorySection && selectedCategory != 'All') {
+        final category = data['category']?.toString() ?? 'Other';
+        if (category.toLowerCase() != selectedCategory.toLowerCase()) return false;
+      }
+
+      // 2. Filter Search Bar
+      if (searchQuery.isNotEmpty) {
+        bool matchesName = event.name.toLowerCase().contains(searchQuery);
+        bool matchesLoc = event.location.toLowerCase().contains(searchQuery);
+        if (!matchesName && !matchesLoc) return false;
+      }
+
+      // 3. Filter Tanggal Spesifik
+      if (_filterDate != null) {
+        bool isSameDay =
+            eventDate.year == _filterDate!.year &&
+            eventDate.month == _filterDate!.month &&
+            eventDate.day == _filterDate!.day;
+        if (!isSameDay) return false;
+      }
+
+      // 4. Filter Status Waktu (Upcoming / Past)
+      if (_filterTimeStatus == 'Upcoming') {
+        if (eventDate.isBefore(now)) return false;
+      } else if (_filterTimeStatus == 'Past') {
+        if (eventDate.isAfter(now)) return false;
+      }
+
+      // 5. Filter Ketersediaan (Slot)
+      if (_filterAvailableOnly) {
+        int quota = (data['quota'] is int) ? data['quota'] : 0;
+        List participants = (data['participants'] is List) ? data['participants'] : [];
+        if (quota > 0 && participants.length >= quota) return false;
+      }
+
+      return true;
+    } catch (e) {
+      // Jika ada error pada satu data, jangan crash seluruh aplikasi, skip saja data ini
+      debugPrint("Error filtering event ${doc.id}: $e");
+      return false;
     }
-
-    // 3. Filter Search Bar
-    if (searchQuery.isNotEmpty) {
-      bool matchesName = event.name.toLowerCase().contains(searchQuery);
-      bool matchesLoc = event.location.toLowerCase().contains(searchQuery);
-      if (!matchesName && !matchesLoc) return false;
-    }
-
-    // 4. Filter Tanggal (Spesifik Tanggal)
-    if (_filterDate != null) {
-      bool isSameDay =
-          eventDate.year == _filterDate!.year &&
-          eventDate.month == _filterDate!.month &&
-          eventDate.day == _filterDate!.day;
-      if (!isSameDay) return false;
-    }
-
-    // 5. Filter Status Waktu (Upcoming / Past)
-    if (_filterTimeStatus == 'Upcoming') {
-      if (eventDate.isBefore(now)) return false;
-    } else if (_filterTimeStatus == 'Past') {
-      if (eventDate.isAfter(now)) return false;
-    }
-
-    // 6. Filter Ketersediaan (Slot Belum Penuh)
-    if (_filterAvailableOnly) {
-      int quota = data['quota'] is int ? data['quota'] : 0;
-      List participants = data['participants'] is List ? data['participants'] : [];
-      if (quota > 0 && participants.length >= quota) return false;
-    }
-
-    return true;
   }
 
   @override
   Widget build(BuildContext context) {
-    // Ambil User ID dari Auth
     final user = context.read<AuthService>().currentUser;
-    // Default fallback name jika loading
     final defaultName = user?.email?.split('@')[0] ?? 'User';
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // --- HEADER SECTION (DIPERBAIKI) ---
-              // Menggunakan StreamBuilder untuk mengambil Nama Lengkap dari Firestore 'users'
+              // --- HEADER SECTION ---
               StreamBuilder<DocumentSnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('users') // Pastikan collection di Firestore bernama 'users'
-                    .doc(user?.uid)
-                    .snapshots(),
+                stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
                 builder: (context, snapshot) {
                   String displayName = defaultName;
                   String initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U';
 
                   if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
                     final userData = snapshot.data!.data() as Map<String, dynamic>;
-
-                    // Prioritas pengambilan nama:
-                    // 1. field 'nama_lengkap' (sesuai screenshot profil)
-                    // 2. field 'name'
-                    // 3. field 'fullName'
-                    // 4. Fallback ke defaultName (email)
                     displayName =
                         userData['nama_lengkap'] ??
                         userData['name'] ??
                         userData['fullName'] ??
                         defaultName;
-
                     if (displayName.isNotEmpty) {
                       initial = displayName[0].toUpperCase();
                     }
                   }
 
                   return Padding(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: const EdgeInsets.fromLTRB(24, 30, 24, 20),
                     child: Row(
                       children: [
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF594AFC),
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                          child: Center(
-                            child: Text(
-                              initial,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
+                        // Avatar
+                        Image.asset('assets/images/profile.png', width: 44, height: 44),
+                        const SizedBox(width: 12),
+                        // Greeting & Name
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,20 +138,24 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   Text(
                                     _getGreeting(),
-                                    style: const TextStyle(color: Color(0xFF696969), fontSize: 14),
+                                    style: const TextStyle(
+                                      color: Color(0xFF696969),
+                                      fontSize: 14,
+                                      fontFamily: 'Poppins',
+                                    ),
                                   ),
-                                  const SizedBox(width: 2),
+                                  const SizedBox(width: 4),
                                   const Text('👋', style: TextStyle(fontSize: 14)),
                                 ],
                               ),
                               const SizedBox(height: 2),
-                              // Tampilkan Nama Lengkap di sini
                               Text(
                                 displayName,
                                 style: const TextStyle(
                                   color: Colors.black,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
+                                  fontFamily: 'Poppins',
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -179,24 +163,47 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                         ),
-                        InkWell(
-                          onTap: () {
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(const SnackBar(content: Text('Notifications clicked')));
-                          },
-                          borderRadius: BorderRadius.circular(17),
-                          child: Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFFCACACA)),
+                        // Notification Button
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Notifications clicked')),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(17),
+                              child: Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: const Color(0xFFCACACA)),
+                                  color: Colors.transparent,
+                                ),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.notifications_outlined,
+                                    size: 18,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
                             ),
-                            child: const Center(
-                              child: Icon(Icons.notifications_outlined, size: 18),
+                            Positioned(
+                              top: 0,
+                              right: 2,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFF68029),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ],
                     ),
@@ -204,12 +211,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
 
-              // --- SEARCH BAR & FILTER BUTTON ---
+              // --- SEARCH BAR ---
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Container(
                   height: 50,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -219,8 +226,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.search, color: Color(0xFF9C9C9C), size: 18),
-                      const SizedBox(width: 10),
+                      const Icon(Icons.search, color: Color(0xFF9C9C9C), size: 20),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
                           controller: _searchController,
@@ -230,17 +237,20 @@ class _HomeScreenState extends State<HomeScreen> {
                             });
                           },
                           decoration: const InputDecoration(
-                            hintText: 'Search events...',
-                            hintStyle: TextStyle(color: Color(0xFF9C9C9C), fontSize: 12),
+                            hintText: 'What event are you looking for...',
+                            hintStyle: TextStyle(
+                              color: Color(0xFF9C9C9C),
+                              fontSize: 12,
+                              fontFamily: 'Poppins',
+                            ),
                             border: InputBorder.none,
                             isDense: true,
-                            contentPadding: EdgeInsets.zero,
                           ),
-                          style: const TextStyle(fontSize: 12),
+                          style: const TextStyle(fontSize: 13, fontFamily: 'Poppins'),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.tune, color: Color(0xFF594AFC), size: 18),
+                        icon: const Icon(Icons.tune, color: Color(0xFF594AFC), size: 20),
                         onPressed: _showFilterDialog,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -257,6 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const Text(
                       'Featured',
@@ -264,16 +275,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.black,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
+                        fontFamily: 'Poppins',
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {},
+                    InkWell(
+                      onTap: () {},
                       child: const Text(
                         'See All',
                         style: TextStyle(
                           color: Color(0xFF594AFC),
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
+                          fontFamily: 'Poppins',
                         ),
                       ),
                     ),
@@ -284,13 +297,26 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 15),
 
               StreamBuilder(
+                // PERBAIKAN: Hapus limit database yang terlalu ketat agar filter client-side berfungsi
                 stream: FirebaseFirestore.instance
                     .collection('events')
                     .where('is_active', isEqualTo: true)
-                    .limit(5)
                     .snapshots(),
                 builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                  double sectionHeight = 260;
+                  double sectionHeight = 280;
+
+                  // Handling Error Database
+                  if (snapshot.hasError) {
+                    return SizedBox(
+                      height: sectionHeight,
+                      child: Center(
+                        child: Text(
+                          "Error: ${snapshot.error}",
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    );
+                  }
 
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return SizedBox(
@@ -303,24 +329,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                     return SizedBox(
-                      height: sectionHeight,
+                      height: 100,
                       child: const Center(
-                        child: Text(
-                          "Tidak ada event featured",
-                          style: TextStyle(color: Color(0xFF9C9C9C)),
-                        ),
+                        child: Text("No featured events", style: TextStyle(color: Colors.grey)),
                       ),
                     );
                   }
 
+                  // Filter Client Side
                   final filteredDocs = snapshot.data!.docs
                       .where((doc) => _shouldShowEvent(doc, false))
+                      .take(5) // Limit hanya 5 SETELAH filter berhasil
                       .toList();
 
                   if (filteredDocs.isEmpty) {
-                    return SizedBox(
-                      height: sectionHeight,
-                      child: const Center(child: Text("Tidak ada event yang cocok")),
+                    return const SizedBox(
+                      height: 100,
+                      child: Center(child: Text("No matching events")),
                     );
                   }
 
@@ -328,13 +353,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: sectionHeight,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 5),
                       itemCount: filteredDocs.length,
                       itemBuilder: (context, index) {
                         final doc = filteredDocs[index];
                         final event = Event.fromFirestore(doc);
                         final data = doc.data() as Map<String, dynamic>;
-                        final imageUrl = data['image_url'] as String?;
+
+                        // Fallback image handling
+                        final imageUrl = data['image_url'] as String? ?? event.imageUrl;
+
                         return EventCard(
                           event: event,
                           eventId: event.id,
@@ -347,14 +375,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 20),
 
               // --- CATEGORIES SECTION ---
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.0),
-                child: Text(
-                  'Categories',
-                  style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Categories',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {},
+                      child: const Text(
+                        'See All',
+                        style: TextStyle(
+                          color: Color(0xFF594AFC),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
@@ -362,7 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // Filter Chips
               SizedBox(
-                height: 40,
+                height: 34,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -371,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     final category = categories[index];
                     final isSelected = selectedCategory == category;
                     return Padding(
-                      padding: const EdgeInsets.only(right: 17),
+                      padding: const EdgeInsets.only(right: 12),
                       child: _buildCategoryChip(category, isSelected),
                     );
                   },
@@ -387,11 +437,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     .where('is_active', isEqualTo: true)
                     .snapshots(),
                 builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                  double sectionHeight = 280;
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text("Error loading data", style: TextStyle(color: Colors.red)),
+                    );
+                  }
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(child: Text("Tidak ada event"));
+                    return const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Center(child: Text("No events found")),
+                    );
                   }
 
                   final filteredDocs = snapshot.data!.docs
@@ -399,34 +458,39 @@ class _HomeScreenState extends State<HomeScreen> {
                       .toList();
 
                   if (filteredDocs.isEmpty) {
-                    return const Center(child: Text("Tidak ada event yang cocok"));
+                    return const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Center(child: Text("No matching events")),
+                    );
                   }
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.8,
-                        crossAxisSpacing: 19,
-                        mainAxisSpacing: 20,
-                      ),
+                  return SizedBox(
+                    height: sectionHeight,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 5),
                       itemCount: filteredDocs.length,
                       itemBuilder: (context, index) {
                         final doc = filteredDocs[index];
                         final event = Event.fromFirestore(doc);
                         final data = doc.data() as Map<String, dynamic>;
-                        final imageUrl = data['image_url'] as String?;
-                        return _buildCategoryCard(event, imageUrl, user?.uid ?? '');
+
+                        // Fallback image handling
+                        final imageUrl = data['image_url'] as String? ?? event.imageUrl;
+
+                        return EventCard(
+                          event: event,
+                          eventId: event.id,
+                          imageUrl: imageUrl,
+                          userId: user?.uid ?? '',
+                        );
                       },
                     ),
                   );
                 },
               ),
 
-              const SizedBox(height: 100),
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -434,7 +498,198 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- FILTER MODAL DIALOG ---
+  // --- WIDGET HELPER METHODS ---
+
+  Widget _buildCategoryChip(String category, bool isSelected) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedCategory = category;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF594AFC) : Colors.transparent,
+          borderRadius: BorderRadius.circular(30),
+          border: isSelected ? null : Border.all(color: const Color(0xFFCACACA), width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (category != 'All') ...[
+              Icon(
+                _getCategoryIcon(category),
+                size: 14,
+                color: isSelected ? Colors.white : const Color(0xFF686868),
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              category,
+              style: TextStyle(
+                color: isSelected ? Colors.white : const Color(0xFF686868),
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVerticalEventCard(Event event, String? imageUrl, String userId) {
+    // Handling tanggal aman
+    DateTime eventDate = DateTime.now();
+    try {
+      eventDate = (event.date).toDate();
+    } catch (e) {
+      // fallback if date parsing fails
+    }
+
+    return GestureDetector(
+      onTap: () {
+        // Navigasi
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Opening ${event.name}')));
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(color: Color(0x19000000), blurRadius: 6, offset: Offset(0, 0)),
+          ],
+        ),
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 4,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD9D9D9),
+                  borderRadius: BorderRadius.circular(20),
+                  image: imageUrl != null && imageUrl.isNotEmpty
+                      ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover)
+                      : null,
+                ),
+                child: imageUrl == null || imageUrl.isEmpty
+                    ? const Center(child: Icon(Icons.image, color: Colors.white54))
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    event.name,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Poppins',
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            DateFormat('EEE, MMM d').format(eventDate),
+                            style: const TextStyle(
+                              color: Color(0xFF594AFC),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Container(
+                            width: 3,
+                            height: 3,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF594AFC),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              DateFormat('HH.mm').format(eventDate),
+                              style: const TextStyle(
+                                color: Color(0xFF594AFC),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                fontFamily: 'Poppins',
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on, size: 12, color: Color(0xFF777777)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              event.location,
+                              style: const TextStyle(
+                                color: Color(0xFF777777),
+                                fontSize: 11,
+                                fontFamily: 'Poppins',
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Music':
+        return Icons.music_note_rounded;
+      case 'Art':
+        return Icons.palette_rounded;
+      case 'Workshop':
+        return Icons.work_rounded;
+      default:
+        return Icons.category;
+    }
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
+  // --- LOGIKA FILTER MODAL (KEMBALI KE KODE AWAL YANG VALID) ---
   void _showFilterDialog() {
     DateTime? tempDate = _filterDate;
     String tempTimeStatus = _filterTimeStatus;
@@ -474,13 +729,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 20),
                   const Text(
                     "Filter Events",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Poppins',
+                    ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  // 1. Filter Tanggal
-                  const Text("Date", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                  // Filter Tanggal
+                  const Text(
+                    "Date",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   InkWell(
                     onTap: () async {
@@ -489,6 +755,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         initialDate: tempDate ?? DateTime.now(),
                         firstDate: DateTime(2020),
                         lastDate: DateTime(2030),
+                        builder: (context, child) {
+                          return Theme(
+                            data: ThemeData.light().copyWith(
+                              colorScheme: const ColorScheme.light(primary: Color(0xFF594AFC)),
+                            ),
+                            child: child!,
+                          );
+                        },
                       );
                       if (picked != null) {
                         setModalState(() {
@@ -509,7 +783,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             tempDate != null
                                 ? DateFormat('EEE, d MMM yyyy').format(tempDate!)
                                 : "Select Specific Date",
-                            style: TextStyle(color: tempDate != null ? Colors.black : Colors.grey),
+                            style: TextStyle(
+                              color: tempDate != null ? Colors.black : Colors.grey,
+                              fontFamily: 'Poppins',
+                            ),
                           ),
                           const Icon(Icons.calendar_today, size: 18, color: Color(0xFF594AFC)),
                         ],
@@ -519,10 +796,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 20),
 
-                  // 2. Filter Time Status (Upcoming / Past)
+                  // Filter Time Status
                   const Text(
                     "Time Status",
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Poppins',
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Wrap(
@@ -536,6 +817,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         labelStyle: TextStyle(
                           color: isSelected ? Colors.white : Colors.black,
                           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                          fontFamily: 'Poppins',
                         ),
                         backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
@@ -557,16 +839,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 20),
 
-                  // 3. Filter Availability (Switch)
+                  // Filter Availability
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text(
                       "Available Seats Only",
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Poppins',
+                      ),
                     ),
                     subtitle: const Text(
                       "Hide events that are fully booked",
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(fontSize: 12, color: Colors.grey, fontFamily: 'Poppins'),
                     ),
                     value: tempAvailableOnly,
                     activeThumbColor: const Color(0xFF594AFC),
@@ -579,7 +865,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 30),
 
-                  // Buttons (Reset & Apply)
                   Row(
                     children: [
                       Expanded(
@@ -596,7 +881,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.symmetric(vertical: 15),
                           ),
-                          child: const Text("Reset", style: TextStyle(color: Color(0xFF594AFC))),
+                          child: const Text(
+                            "Reset",
+                            style: TextStyle(color: Color(0xFF594AFC), fontFamily: 'Poppins'),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 15),
@@ -615,7 +903,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.symmetric(vertical: 15),
                           ),
-                          child: const Text("Apply Filter", style: TextStyle(color: Colors.white)),
+                          child: const Text(
+                            "Apply Filter",
+                            style: TextStyle(color: Colors.white, fontFamily: 'Poppins'),
+                          ),
                         ),
                       ),
                     ],
@@ -628,198 +919,5 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
-  }
-
-  // --- WIDGET HELPER ---
-  Widget _buildCategoryCard(Event event, String? imageUrl, String userId) {
-    DateTime eventDate = (event.date).toDate();
-
-    return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Opening ${event.name}')));
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [
-            BoxShadow(color: Color(0x19000000), blurRadius: 6, offset: Offset(0, 0)),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Event Image
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD9D9D9),
-                  borderRadius: BorderRadius.circular(20),
-                  image: imageUrl != null && imageUrl.isNotEmpty
-                      ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover)
-                      : null,
-                ),
-                child: imageUrl == null || imageUrl.isEmpty
-                    ? const Center(child: Icon(Icons.event, size: 40, color: Colors.white54))
-                    : null,
-              ),
-            ),
-            // Event Details
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    event.name,
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          _formatDateShort(eventDate),
-                          style: const TextStyle(
-                            color: Color(0xFF594AFC),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Container(
-                        width: 3,
-                        height: 3,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF594AFC),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Flexible(
-                        child: Text(
-                          _formatTime(eventDate),
-                          style: const TextStyle(
-                            color: Color(0xFF594AFC),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, size: 14, color: Color(0xFF777777)),
-                      const SizedBox(width: 5),
-                      Expanded(
-                        child: Text(
-                          event.location,
-                          style: const TextStyle(
-                            color: Color(0xFF777777),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryChip(String category, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedCategory = category;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF594AFC) : Colors.transparent,
-          border: Border.all(color: isSelected ? Colors.transparent : const Color(0xFFCACACA)),
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              _getCategoryIcon(category),
-              size: 14,
-              color: isSelected ? Colors.white : const Color(0xFF686868),
-            ),
-            const SizedBox(width: 5),
-            Text(
-              category,
-              style: TextStyle(
-                color: isSelected ? Colors.white : const Color(0xFF686868),
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'All':
-        return Icons.apps;
-      case 'Music':
-        return Icons.music_note;
-      case 'Art':
-        return Icons.palette;
-      case 'Workshop':
-        return Icons.work;
-      default:
-        return Icons.category;
-    }
-  }
-
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Good Morning';
-    } else if (hour < 18) {
-      return 'Good Afternoon';
-    } else {
-      return 'Good Evening';
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return DateFormat('EEE, MMM d').format(date);
-  }
-
-  String _formatDateShort(DateTime date) {
-    return DateFormat('EEE, MMM d').format(date);
-  }
-
-  String _formatTime(DateTime date) {
-    return DateFormat('HH:mm a').format(date);
   }
 }
