@@ -40,7 +40,10 @@ class _ScanScreenState extends State<ScanScreen> {
       final absenceId = qrData.trim();
 
       if (absenceId.isEmpty) {
-        _showResultDialog(success: false, message: 'QR Code tidak valid atau kosong');
+        _showResultDialog(
+          success: false,
+          message: 'QR Code tidak valid atau kosong',
+        );
         return;
       }
 
@@ -92,7 +95,10 @@ class _ScanScreenState extends State<ScanScreen> {
             Expanded(
               child: Text(
                 success ? 'Berhasil' : 'Gagal',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -111,7 +117,10 @@ class _ScanScreenState extends State<ScanScreen> {
                 _buildInfoRow('Event ID', data['event_id']?.toString() ?? '-'),
                 _buildInfoRow('Status', data['status']?.toString() ?? '-'),
                 if (data['attendance_time'] != null)
-                  _buildInfoRow('Waktu Absen', _formatTimestamp(data['attendance_time'])),
+                  _buildInfoRow(
+                    'Waktu Absen',
+                    _formatTimestamp(data['attendance_time']),
+                  ),
               ],
             ],
           ),
@@ -140,7 +149,9 @@ class _ScanScreenState extends State<ScanScreen> {
                 });
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: success ? Colors.green : Colors.grey),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: success ? Colors.green : Colors.grey,
+            ),
             child: Text(success ? 'SELESAI' : 'TUTUP'),
           ),
         ],
@@ -156,7 +167,10 @@ class _ScanScreenState extends State<ScanScreen> {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
           ),
           const Text(': ', style: TextStyle(fontWeight: FontWeight.bold)),
           Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
@@ -191,7 +205,9 @@ class _ScanScreenState extends State<ScanScreen> {
             icon: ValueListenableBuilder(
               valueListenable: cameraController.torchState,
               builder: (context, state, child) {
-                return Icon(state == TorchState.on ? Icons.flash_on : Icons.flash_off);
+                return Icon(
+                  state == TorchState.on ? Icons.flash_on : Icons.flash_off,
+                );
               },
             ),
             onPressed: () => cameraController.toggleTorch(),
@@ -220,7 +236,10 @@ class _ScanScreenState extends State<ScanScreen> {
 
           // Overlay gelap dengan lubang
           ColorFiltered(
-            colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.6), BlendMode.srcOut),
+            colorFilter: ColorFilter.mode(
+              Colors.black.withOpacity(0.6),
+              BlendMode.srcOut,
+            ),
             child: Stack(
               children: [
                 Container(
@@ -267,7 +286,9 @@ class _ScanScreenState extends State<ScanScreen> {
                           top: BorderSide(color: Colors.greenAccent, width: 4),
                           left: BorderSide(color: Colors.greenAccent, width: 4),
                         ),
-                        borderRadius: BorderRadius.only(topLeft: Radius.circular(16)),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                        ),
                       ),
                     ),
                   ),
@@ -280,9 +301,14 @@ class _ScanScreenState extends State<ScanScreen> {
                       decoration: const BoxDecoration(
                         border: Border(
                           top: BorderSide(color: Colors.greenAccent, width: 4),
-                          right: BorderSide(color: Colors.greenAccent, width: 4),
+                          right: BorderSide(
+                            color: Colors.greenAccent,
+                            width: 4,
+                          ),
                         ),
-                        borderRadius: BorderRadius.only(topRight: Radius.circular(16)),
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(16),
+                        ),
                       ),
                     ),
                   ),
@@ -294,10 +320,15 @@ class _ScanScreenState extends State<ScanScreen> {
                       height: 40,
                       decoration: const BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Colors.greenAccent, width: 4),
+                          bottom: BorderSide(
+                            color: Colors.greenAccent,
+                            width: 4,
+                          ),
                           left: BorderSide(color: Colors.greenAccent, width: 4),
                         ),
-                        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(16)),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(16),
+                        ),
                       ),
                     ),
                   ),
@@ -309,10 +340,18 @@ class _ScanScreenState extends State<ScanScreen> {
                       height: 40,
                       decoration: const BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Colors.greenAccent, width: 4),
-                          right: BorderSide(color: Colors.greenAccent, width: 4),
+                          bottom: BorderSide(
+                            color: Colors.greenAccent,
+                            width: 4,
+                          ),
+                          right: BorderSide(
+                            color: Colors.greenAccent,
+                            width: 4,
+                          ),
                         ),
-                        borderRadius: BorderRadius.only(bottomRight: Radius.circular(16)),
+                        borderRadius: BorderRadius.only(
+                          bottomRight: Radius.circular(16),
+                        ),
                       ),
                     ),
                   ),
@@ -368,7 +407,10 @@ class _ScanScreenState extends State<ScanScreen> {
                     SizedBox(
                       width: 60,
                       height: 60,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 4),
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 4,
+                      ),
                     ),
                     SizedBox(height: 24),
                     Text(
