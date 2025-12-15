@@ -1,9 +1,14 @@
 // lib/admin/admin_home.dart
 // UPDATE: Menambahkan navigasi ke Participant Management Screen
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:excel/excel.dart' as excel_package;
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
@@ -13,7 +18,7 @@ import 'scan_screen.dart';
 import 'attendance_history.dart';
 import 'event_management_screen.dart';
 import 'edit_event_screen.dart';
-import 'participant_management_screen.dart';  // TAMBAHKAN INI
+import 'participant_management_screen.dart';
 
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key});
@@ -158,28 +163,12 @@ class AdminHomeScreen extends StatelessWidget {
                       MaterialPageRoute(builder: (_) => const ScanScreen()),
                     );
                   }),
-                  // UBAH BAGIAN INI - Dari Coming Soon ke Navigator
                   _quickActionTile(Icons.people_alt, "Participant\nManagement", () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const ParticipantManagementScreen()),
                     );
                   }),
-                  _quickActionTile(Icons.event, "Event\nManagement", () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ScanScreen()),
-                    );
-                  }),
-                  _quickActionTile(
-                    Icons.people_alt,
-                    "Participant\nManagement",
-                    () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Coming Soon")),
-                      );
-                    },
-                  ),
                   _quickActionTile(Icons.event, "Event\nManagement", () {
                     Navigator.push(
                       context,
@@ -201,9 +190,7 @@ class AdminHomeScreen extends StatelessWidget {
                     },
                   ),
                   _quickActionTile(Icons.upload_file, "Export\nData", () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Coming Soon")),
-                    );
+                    _exportAttendanceData(context);
                   }),
                 ],
               ),
@@ -212,7 +199,7 @@ class AdminHomeScreen extends StatelessWidget {
             const SizedBox(height: 22),
 
             const Text(
-              "Active Events",
+              "Upcoming Events",
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -221,490 +208,298 @@ class AdminHomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            _activeEventsSection(context),
-            const SizedBox(height: 30),
+            _upcomingEvents(context),
           ],
         ),
-      ),
-
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        selectedItemColor: Colors.deepPurple,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.event), label: "Event"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner),
-            label: "Scan",
-          ),
-        ],
-        onTap: (index) {
-          if (index == 1) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const EventManagementScreen()),
-            );
-          } else if (index == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ScanScreen()),
-            );
-          }
-        },
       ),
     );
   }
 
   Widget _statsSection() {
-    return Row(
-      children: [
-        Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection("users").snapshots(),
-            builder: (context, snap) {
-              final total = snap.data?.docs.length ?? 0;
-              return _statCard(
-                "$total",
-                "Total Participant",
-                Colors.blue.shade50,
-                Colors.blue,
-              );
-            },
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection("events").snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        int totalEvents = 0;
+        int totalParticipants = 0;
+
+        if (snapshot.hasData) {
+          totalEvents = snapshot.data!.docs.length;
+          for (var doc in snapshot.data!.docs) {
+            final data = doc.data() as Map<String, dynamic>;
+            totalParticipants += (data['participants_count'] ?? 0) as int;
+          }
+        }
+
+        return Row(
+          children: [
+            Expanded(
+              child: _statCard(
+                icon: Icons.event,
+                label: "Total Events",
+                value: totalEvents.toString(),
+                color: Colors.blue,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _statCard(
+                icon: Icons.people,
+                label: "Total Participants",
+                value: totalParticipants.toString(),
+                color: Colors.green,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _statCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 24),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: FutureBuilder<QuerySnapshot>(
-            future: FirebaseFirestore.instance
-                .collection("absences")
-                .where("status", isEqualTo: "hadir")
-                .get(),
-            builder: (context, snap) {
-              final count = snap.data?.docs.length ?? 0;
-              return _statCard(
-                "$count",
-                "Checked-in",
-                Colors.orange.shade50,
-                Colors.orange,
-              );
-            },
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Poppins',
+            ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.black54,
+              fontSize: 12,
+              fontFamily: 'Poppins',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportAttendanceData(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Text('Exporting data...'),
+          ],
         ),
-      ],
+      ),
     );
 
     try {
-      debugPrint('=== MULAI EKSPOR DATA MOBILE ===');
-
-      // 1. Cek autentikasi
-      final currentUser = FirebaseAuth.instance.currentUser;
+      final currentUser = firebase_auth.FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
-        Navigator.pop(dialogContext);
-        _showSnackbar(
-          dialogContext,
-          'Harus login terlebih dahulu',
-          Colors.orange,
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User not logged in')),
         );
         return;
       }
 
-      // 2. Ambil data absences
-      debugPrint('Mengambil data dari Firestore...');
+      // Fetch absences
       final absenceSnapshot = await FirebaseFirestore.instance
           .collection('absences')
+          .orderBy('absence_time', descending: true)
           .get();
 
-      debugPrint('Jumlah data ditemukan: ${absenceSnapshot.docs.length}');
-
       if (absenceSnapshot.docs.isEmpty) {
-        Navigator.pop(dialogContext);
-        _showSnackbar(
-          dialogContext,
-          'Tidak ada data absensi untuk diekspor',
-          Colors.orange,
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No attendance data to export')),
         );
         return;
       }
 
-      // 3. Ambil data users dan events untuk referensi
+      // Fetch related user and event data
       final usersData = await _fetchUsersData(absenceSnapshot);
       final eventsData = await _fetchEventsData(absenceSnapshot);
 
-      // 4. Buat file Excel
-      debugPrint('Membuat file Excel...');
+      // Create Excel
       final excel = excel_package.Excel.createExcel();
-      final sheet = excel['Riwayat Absensi'];
+      final sheet = excel['Attendance Data'];
 
-      // Header
+      // Headers
       sheet.appendRow([
-        'ID Absensi',
-        'User ID',
-        'Nama User',
-        'Email User',
-        'Event ID',
-        'Nama Event',
-        'Waktu Absensi',
+        'No',
+        'Nama',
+        'NIM',
+        'Email',
+        'Event',
+        'Lokasi',
         'Status',
-        'Tanggal (DD/MM/YYYY)',
+        'Waktu Absen',
       ]);
 
-      // 5. Proses data
-      int processedCount = 0;
-
+      // Data rows
+      int no = 1;
       for (var doc in absenceSnapshot.docs) {
-        try {
-          final data = doc.data();
-          final docId = doc.id;
-          final eventId = data['event_id']?.toString() ?? '';
-          final userId = data['user_id']?.toString() ?? '';
+        final data = doc.data();
+        final userId = data['user_id'] ?? '';
+        final eventId = data['event_id'] ?? '';
+        final status = data['status'] ?? '';
+        final absenceTime = data['absence_time'] as Timestamp?;
 
-          // Ambil nama user
-          String userName = 'User Tidak Ditemukan';
-          String userEmail = '-';
-          if (userId.isNotEmpty && usersData.containsKey(userId)) {
-            final user = usersData[userId]!;
-            userName =
-                user['name'] ??
-                user['full_name'] ??
-                user['username'] ??
-                user['displayName'] ??
-                'User ID: $userId';
-            userEmail = user['email'] ?? '-';
-          } else if (userId.isNotEmpty) {
-            userName = 'User ID: $userId';
-          }
+        final userName = usersData[userId]?['name'] ?? 'Unknown';
+        final userNim = usersData[userId]?['nim'] ?? '-';
+        final userEmail = usersData[userId]?['email'] ?? '-';
+        final eventName = eventsData[eventId]?['event_name'] ?? 'Unknown Event';
+        final eventLocation = eventsData[eventId]?['location'] ?? '-';
 
-          // Ambil nama event
-          String eventName = 'Event Tidak Ditemukan';
-          if (eventId.isNotEmpty && eventsData.containsKey(eventId)) {
-            final event = eventsData[eventId]!;
-            eventName =
-                event['event_name'] ??
-                event['title'] ??
-                event['name'] ??
-                'Event ID: $eventId';
-          } else if (eventId.isNotEmpty) {
-            eventName = 'Event ID: $eventId';
-          }
-
-          // Parse waktu
-          String timeStr = 'Belum absen';
-          String dateStr = '';
-
-          // Cari field timestamp
-          final timestamp = _parseTimestamp(data);
-          if (timestamp != null) {
-            final date = timestamp.toDate();
-            timeStr =
-                '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}';
-            dateStr =
-                '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-          }
-
-          // Status
-          final status = data['status']?.toString() ?? 'hadir';
-
-          // Tambahkan ke Excel
-          sheet.appendRow([
-            docId,
-            userId,
-            userName,
-            userEmail,
-            eventId,
-            eventName,
-            timeStr,
-            status,
-            dateStr,
-          ]);
-
-          processedCount++;
-        } catch (e) {
-          debugPrint('Error processing document ${doc.id}: $e');
+        String absenceTimeStr = '-';
+        if (absenceTime != null) {
+          final dt = absenceTime.toDate();
+          absenceTimeStr =
+              '${dt.day}/${dt.month}/${dt.year} ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
         }
+
+        sheet.appendRow([
+          no,
+          userName,
+          userNim,
+          userEmail,
+          eventName,
+          eventLocation,
+          status,
+          absenceTimeStr,
+        ]);
+
+        no++;
       }
 
-      // 6. Simpan file
-      final excelBytes = excel.save();
+      // Save file
+      final excelBytes = excel.encode();
       if (excelBytes == null) {
-        throw Exception('Gagal membuat file Excel');
+        throw Exception('Failed to encode Excel file');
       }
 
-      // 7. Simpan ke storage mobile
+      // Get directory
       final directory = await getExternalStorageDirectory();
       final downloadsDir = Directory('/storage/emulated/0/Download');
 
       Directory targetDir;
-      if (downloadsDir.existsSync()) {
+      if (await downloadsDir.exists()) {
         targetDir = downloadsDir;
-      } else if (directory != null) {
-        targetDir = directory;
       } else {
         targetDir = await getTemporaryDirectory();
       }
 
-      final fileName =
-          'riwayat_absensi_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'attendance_data_$timestamp.xlsx';
       final filePath = '${targetDir.path}/$fileName';
 
       final file = File(filePath);
       await file.writeAsBytes(excelBytes);
 
-      // 8. Buka file
+      // Open file
       await OpenFilex.open(filePath);
 
-      // 9. Tampilkan hasil
-      Navigator.pop(dialogContext);
-
-      _showSnackbar(
-        dialogContext,
-        '$processedCount data berhasil diekspor\nFile tersimpan di: ${targetDir.path}',
-        Colors.green,
-        duration: 5,
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('File saved to: $filePath'),
+          duration: const Duration(seconds: 3),
+        ),
       );
     } catch (e) {
-      Navigator.pop(dialogContext);
-
-      debugPrint('ERROR: $e');
-
-      _showSnackbar(
-        dialogContext,
-        'Gagal mengekspor: ${e.toString()}',
-        Colors.red,
-        duration: 5,
+      Navigator.pop(context);
+      debugPrint('Error exporting data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
 
   Future<Map<String, Map<String, dynamic>>> _fetchUsersData(
-    QuerySnapshot absenceSnapshot,
-  ) async {
-    final Map<String, Map<String, dynamic>> usersData = {};
-    final Set<String> userIds = {};
+      QuerySnapshot absenceSnapshot) async {
+    final userIds =
+        absenceSnapshot.docs.map((doc) => doc['user_id'] as String).toSet();
+    final usersData = <String, Map<String, dynamic>>{};
 
-    // Kumpulkan semua user ID
-    for (var doc in absenceSnapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>;
-      final userId = data['user_id']?.toString() ?? '';
-      if (userId.isNotEmpty) userIds.add(userId);
-    }
-
-    if (userIds.isEmpty) return usersData;
-
-    // Ambil data users (batch untuk efisiensi)
-    try {
-      final userIdList = userIds.toList();
-      for (var i = 0; i < userIdList.length; i += 10) {
-        final batch = userIdList.sublist(
-          i,
-          i + 10 > userIdList.length ? userIdList.length : i + 10,
-        );
-
-        final usersSnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .where(FieldPath.documentId, whereIn: batch)
-            .get();
-
-        for (var doc in usersSnapshot.docs) {
-          usersData[doc.id] = doc.data();
-        }
+    for (var userId in userIds) {
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        usersData[userId] = userDoc.data() ?? {};
       }
-    } catch (e) {
-      debugPrint('Error fetching users: $e');
     }
 
     return usersData;
   }
 
   Future<Map<String, Map<String, dynamic>>> _fetchEventsData(
-    QuerySnapshot absenceSnapshot,
-  ) async {
-    final Map<String, Map<String, dynamic>> eventsData = {};
-    final Set<String> eventIds = {};
+      QuerySnapshot absenceSnapshot) async {
+    final eventIds =
+        absenceSnapshot.docs.map((doc) => doc['event_id'] as String).toSet();
+    final eventsData = <String, Map<String, dynamic>>{};
 
-    // Kumpulkan semua event ID
-    for (var doc in absenceSnapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>;
-      final eventId = data['event_id']?.toString() ?? '';
-      if (eventId.isNotEmpty) eventIds.add(eventId);
-    }
-
-    if (eventIds.isEmpty) return eventsData;
-
-    // Ambil data events
-    try {
-      final eventIdList = eventIds.toList();
-      for (var i = 0; i < eventIdList.length; i += 10) {
-        final batch = eventIdList.sublist(
-          i,
-          i + 10 > eventIdList.length ? eventIdList.length : i + 10,
-        );
-
-        final eventsSnapshot = await FirebaseFirestore.instance
-            .collection('events')
-            .where(FieldPath.documentId, whereIn: batch)
-            .get();
-
-        for (var doc in eventsSnapshot.docs) {
-          eventsData[doc.id] = doc.data();
-        }
+    for (var eventId in eventIds) {
+      final eventDoc = await FirebaseFirestore.instance
+          .collection('events')
+          .doc(eventId)
+          .get();
+      if (eventDoc.exists) {
+        eventsData[eventId] = eventDoc.data() ?? {};
       }
-    } catch (e) {
-      debugPrint('Error fetching events: $e');
     }
 
     return eventsData;
-  }
-
-  Timestamp? _parseTimestamp(Map<String, dynamic> data) {
-    // Coba berbagai field yang mungkin berisi timestamp
-    final possibleFields = [
-      'absence_time',
-      'check_in_time',
-      'timestamp',
-      'created_at',
-      'time',
-      'attendance_time',
-      'date',
-    ];
-
-    for (var field in possibleFields) {
-      final value = data[field];
-      if (value == null) continue;
-
-      if (value is Timestamp) {
-        print('Found timestamp in field: $field');
-        return value;
-      } else if (value is Map) {
-        final map = value as Map<String, dynamic>;
-        if (map['_seconds'] != null && map['_nanoseconds'] != null) {
-          print('Found timestamp map in field: $field');
-          return Timestamp(map['_seconds'] as int, map['_nanoseconds'] as int);
-        }
-      } else if (value is String) {
-        final date = DateTime.tryParse(value);
-        if (date != null) {
-          print('Found date string in field: $field = $date');
-          return Timestamp.fromDate(date);
-        }
-      }
-    }
-
-    print(
-      'No timestamp found in data. Available fields: ${data.keys.join(", ")}',
-    );
-    return null;
-  }
-
-  void _showSnackbar(
-    BuildContext context,
-    String message,
-    Color color, {
-    int duration = 3,
-  }) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: const TextStyle(fontFamily: 'Poppins')),
-        backgroundColor: color,
-        duration: Duration(seconds: duration),
-      ),
-    );
-  }
-
-  Widget _statsSection() {
-    // Real-time stats from Firestore: compute unique participants,
-    // checked-in and not-checked-in from `absences` collection.
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('absences').snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final docs = snapshot.data?.docs ?? [];
-
-        // compute unique participant ids
-        final Set<String> participantIds = {};
-        final Set<String> checkedInIds = {};
-
-        for (var d in docs) {
-          final data = d.data() as Map<String, dynamic>?;
-          if (data == null) continue;
-          final uid = (data['user_id'] ?? '').toString();
-          if (uid.isEmpty) continue;
-          participantIds.add(uid);
-          final status = (data['status'] ?? '').toString().toLowerCase();
-          if (status == 'hadir' ||
-              status == 'checked_in' ||
-              status == 'present') {
-            checkedInIds.add(uid);
-          }
-        }
-
-        final totalParticipants = participantIds.length;
-        final checkedIn = checkedInIds.length;
-        final notCheckedIn = (totalParticipants - checkedIn).clamp(
-          0,
-          totalParticipants,
-        );
-
-        return Column(
-          children: [
-            Row(
-              children: [
-                _statCard(
-                  totalParticipants.toString(),
-                  "Total Participant",
-                  Colors.blue.shade50,
-                  Colors.indigo,
-                ),
-                const SizedBox(width: 12),
-                _statCard(
-                  checkedIn.toString(),
-                  "Checked-in",
-                  Colors.orange.shade50,
-                  Colors.orange,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _statCard(
-                  notCheckedIn.toString(),
-                  "Not Checked-in",
-                  Colors.green.shade50,
-                  Colors.green,
-                ),
-                const SizedBox(width: 12),
-                FutureBuilder<int>(
-                  future: _countActiveEvents(),
-                  builder: (context, snap) {
-                    final active = snap.data ?? 0;
-                    return _statCard(
-                      active.toString(),
-                      "Active Event",
-                      Colors.purple.shade50,
-                      Colors.purple,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _quickActionTile(IconData icon, String label, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+        width: 100,
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.deepPurple.shade50,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.deepPurple.shade100),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -713,10 +508,12 @@ class AdminHomeScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
+              textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black54,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
                 fontFamily: 'Poppins',
+                color: Colors.deepPurple,
               ),
             ),
           ],
@@ -725,48 +522,13 @@ class AdminHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _quickActionTile(IconData icon, String label, VoidCallback onTap) {
-    return Container(
-      width: 100,
-      margin: const EdgeInsets.only(right: 12),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.black12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
-                    blurRadius: 6,
-                  ),
-                ],
-              ),
-              child: Icon(icon, size: 30, color: Colors.deepPurple),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, fontFamily: 'Poppins'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _activeEventsSection(BuildContext context) {
-    return StreamBuilder(
+  Widget _upcomingEvents(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection("events")
           .where("is_active", isEqualTo: true)
-          .orderBy("event_date")
+          .orderBy("event_date", descending: false)
+          .limit(5)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -813,7 +575,7 @@ class AdminHomeScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ===================== EVENT IMAGE =====================
+                  // Event Image
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: imageUrl.isNotEmpty
