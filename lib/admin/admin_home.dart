@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'widgets/admin_header.dart';
 import 'widgets/quick_actions_section.dart';
-import 'widgets/stats_section.dart';
+import 'widgets/stats_section_rtdb.dart';
 import 'widgets/upcoming_events_section.dart';
 
 class AdminHomeScreen extends StatelessWidget {
@@ -63,7 +63,7 @@ class AdminHomeScreen extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: const AdminBottomNav(currentIndex: 0),
-      body: const SingleChildScrollView(
+      body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

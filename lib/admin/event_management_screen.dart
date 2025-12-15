@@ -22,7 +22,13 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   // Categories Data
-  final List<String> categories = ['All', 'Music', 'Art', 'Workshop', 'Seminar'];
+  final List<String> categories = [
+    'All',
+    'Music',
+    'Art',
+    'Workshop',
+    'Seminar',
+  ];
 
   // Filter States
   String searchQuery = '';
@@ -41,22 +47,22 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
   // --- CORE FILTER LOGIC ---
   bool _shouldShowEvent(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    
+
     // 1. Ambil Tanggal Event
     DateTime eventDate;
     try {
-       eventDate = (data["event_date"] as Timestamp).toDate();
+      eventDate = (data["event_date"] as Timestamp).toDate();
     } catch (e) {
-       eventDate = DateTime.now();
+      eventDate = DateTime.now();
     }
-    
+
     DateTime now = DateTime.now();
 
     // 2. Filter Search Bar (Mencakup NAMA EVENT dan LOKASI)
     if (searchQuery.isNotEmpty) {
       final name = (data['event_name'] ?? '').toString().toLowerCase();
       final location = (data['location'] ?? '').toString().toLowerCase();
-      
+
       if (!name.contains(searchQuery) && !location.contains(searchQuery)) {
         return false;
       }
@@ -72,12 +78,14 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
 
     // 4. Filter Tanggal
     if (_filterDate != null) {
-      bool isSameDay = eventDate.year == _filterDate!.year &&
+      bool isSameDay =
+          eventDate.year == _filterDate!.year &&
           eventDate.month == _filterDate!.month &&
           eventDate.day == _filterDate!.day;
       if (!isSameDay) return false;
     } else if (_filterMonth != null) {
-      bool isSameMonth = eventDate.year == _filterMonth!.year &&
+      bool isSameMonth =
+          eventDate.year == _filterMonth!.year &&
           eventDate.month == _filterMonth!.month;
       if (!isSameMonth) return false;
     }
@@ -92,7 +100,9 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
     // 6. Filter Ketersediaan
     if (_filterAvailableOnly) {
       int quota = data['participants'] is int ? data['participants'] : 0;
-      int filled = data['participants_count'] is int ? data['participants_count'] : 0;
+      int filled = data['participants_count'] is int
+          ? data['participants_count']
+          : 0;
       if (quota > 0 && filled >= quota) return false;
     }
 
@@ -142,7 +152,7 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
           },
         ),
       ),
-      
+
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 1,
         selectedItemColor: Colors.deepPurple,
@@ -150,14 +160,22 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.event), label: "Event"),
-          BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner), label: "Scan"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.qr_code_scanner),
+            label: "Scan",
+          ),
         ],
         onTap: (index) {
           if (index == 0) {
             Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const AdminHomeScreen()));
+              context,
+              MaterialPageRoute(builder: (_) => const AdminHomeScreen()),
+            );
           } else if (index == 2) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ScanScreen()),
+            );
           }
         },
       ),
@@ -205,11 +223,18 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
                       ),
-                      style: const TextStyle(fontSize: 12, fontFamily: 'Poppins'),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Poppins',
+                      ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.tune, size: 20, color: Color(0xFF594AFC)),
+                    icon: const Icon(
+                      Icons.tune,
+                      size: 20,
+                      color: Color(0xFF594AFC),
+                    ),
                     onPressed: _showFilterDialog,
                     constraints: const BoxConstraints(),
                     padding: EdgeInsets.zero,
@@ -232,9 +257,9 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                     child: CircularProgressIndicator(color: Color(0xFF594AFC)),
                   );
                 }
-                
+
                 final allDocs = snapshot.data?.docs;
-                
+
                 if (allDocs == null || allDocs.isEmpty) {
                   return const Center(
                     child: Text(
@@ -251,7 +276,7 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                 final filteredDocs = allDocs.where(_shouldShowEvent).toList();
 
                 if (filteredDocs.isEmpty) {
-                   return const Center(
+                  return const Center(
                     child: Text(
                       "Tidak ada event yang cocok",
                       style: TextStyle(
@@ -275,7 +300,7 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
 
                     final dateStr = _formatDate(date);
                     final timeStr = _formatTime(date);
-                    
+
                     // AMBIL IMAGE URL
                     final imageUrl = event["image_url"] ?? '';
 
@@ -304,19 +329,20 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                                 height: 120,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Container(
-                                    height: 120,
-                                    color: Colors.grey[200],
-                                    child: const Center(
-                                      child: CircularProgressIndicator(
-                                        color: Color(0xFF594AFC),
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  );
-                                },
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Container(
+                                        height: 120,
+                                        color: Colors.grey[200],
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            color: Color(0xFF594AFC),
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(
                                     height: 120,
@@ -325,15 +351,19 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Center(
-                                      child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                                      child: Icon(
+                                        Icons.broken_image,
+                                        size: 40,
+                                        color: Colors.grey,
+                                      ),
                                     ),
                                   );
                                 },
                               ),
                             ),
-                          
+
                           if (imageUrl.isNotEmpty) const SizedBox(height: 12),
-                          
+
                           Text(
                             event["event_name"] ?? "-",
                             style: const TextStyle(
@@ -418,7 +448,8 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                                     ],
                                   ),
                                   child: ElevatedButton(
-                                    onPressed: () => _showDeleteDialog(context, eventId),
+                                    onPressed: () =>
+                                        _showDeleteDialog(context, eventId),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.white,
                                       foregroundColor: const Color(0xFF9A2824),
@@ -428,7 +459,8 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                                       ),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: const [
                                         Icon(Icons.delete_outline, size: 18),
                                         SizedBox(width: 5),
@@ -464,7 +496,8 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => EditEventScreen(eventId: eventId),
+                                          builder: (_) =>
+                                              EditEventScreen(eventId: eventId),
                                         ),
                                       );
                                     },
@@ -472,13 +505,17 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                                       backgroundColor: Colors.white,
                                       foregroundColor: const Color(0xFF594AFC),
                                       elevation: 0,
-                                      side: const BorderSide(width: 1, color: Color(0xFF594AFC)),
+                                      side: const BorderSide(
+                                        width: 1,
+                                        color: Color(0xFF594AFC),
+                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(30),
                                       ),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: const [
                                         Icon(Icons.edit_outlined, size: 18),
                                         SizedBox(width: 5),
@@ -533,7 +570,7 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                 top: 25,
                 left: 24,
                 right: 24,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 25
+                bottom: MediaQuery.of(context).viewInsets.bottom + 25,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -559,7 +596,7 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Date Filter
                   const Text(
                     "Specific Date",
@@ -586,7 +623,10 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         border: Border.all(color: const Color(0xFFCACACA)),
                         borderRadius: BorderRadius.circular(12),
@@ -596,20 +636,28 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                         children: [
                           Text(
                             tempDate != null
-                                ? DateFormat('EEE, d MMM yyyy').format(tempDate!)
+                                ? DateFormat(
+                                    'EEE, d MMM yyyy',
+                                  ).format(tempDate!)
                                 : "Select Date",
                             style: TextStyle(
-                              color: tempDate != null ? Colors.black : Colors.grey,
+                              color: tempDate != null
+                                  ? Colors.black
+                                  : Colors.grey,
                               fontFamily: 'Poppins',
                             ),
                           ),
-                          const Icon(Icons.calendar_today, size: 18, color: Color(0xFF594AFC)),
+                          const Icon(
+                            Icons.calendar_today,
+                            size: 18,
+                            color: Color(0xFF594AFC),
+                          ),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 15),
-                  
+
                   // Month Filter
                   const Text(
                     "Or Select Month",
@@ -637,7 +685,10 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         border: Border.all(color: const Color(0xFFCACACA)),
                         borderRadius: BorderRadius.circular(12),
@@ -650,7 +701,9 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                                 ? DateFormat('MMMM yyyy').format(tempMonth!)
                                 : "Select Month",
                             style: TextStyle(
-                              color: tempMonth != null ? Colors.black : Colors.grey,
+                              color: tempMonth != null
+                                  ? Colors.black
+                                  : Colors.grey,
                               fontFamily: 'Poppins',
                             ),
                           ),
@@ -664,7 +717,7 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                     ),
                   ),
                   const SizedBox(height: 15),
-                  
+
                   // Category Filter
                   const Text(
                     "Category",
@@ -686,16 +739,20 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                         selectedColor: const Color(0xFF594AFC),
                         labelStyle: TextStyle(
                           color: isSelected ? Colors.white : Colors.black,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
                           fontFamily: 'Poppins',
-                          fontSize: 12
+                          fontSize: 12,
                         ),
                         backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           side: BorderSide(
-                            color: isSelected ? Colors.transparent : Colors.grey.shade300,
+                            color: isSelected
+                                ? Colors.transparent
+                                : Colors.grey.shade300,
                           ),
-                          borderRadius: BorderRadius.circular(20)
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         onSelected: (bool selected) {
                           if (selected) {
@@ -708,7 +765,7 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                     }).toList(),
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Info
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -734,7 +791,7 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  
+
                   // Buttons
                   Row(
                     children: [
@@ -809,8 +866,18 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
   // --- HELPERS ---
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return '${days[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
@@ -845,11 +912,29 @@ class _EventManagementScreenState extends State<EventManagementScreen> {
           ),
           TextButton(
             onPressed: () async {
-              await FirebaseFirestore.instance
-                  .collection("events")
-                  .doc(eventId)
-                  .delete();
-              Navigator.pop(ctx);
+              // disable and perform delete with error handling
+              try {
+                await FirebaseFirestore.instance
+                    .collection("events")
+                    .doc(eventId)
+                    .delete();
+                Navigator.of(ctx).pop(); // close the dialog
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Event deleted'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                // ensure dialog is closed and report error
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to delete event: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             child: const Text(
               'Delete',
