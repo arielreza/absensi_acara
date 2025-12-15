@@ -1,22 +1,19 @@
 // lib/admin/admin_home.dart
+// UPDATE: Menambahkan navigasi ke Participant Management Screen
 
-import 'dart:io';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:excel/excel.dart' as excel_package;
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:open_filex/open_filex.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../models/attendance.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
-import 'attendance_history.dart';
-import 'edit_event_screen.dart';
-import 'event_management_screen.dart';
+import '../models/attendance.dart';
+
 import 'scan_screen.dart';
+import 'attendance_history.dart';
+import 'event_management_screen.dart';
+import 'edit_event_screen.dart';
+import 'participant_management_screen.dart';  // TAMBAHKAN INI
 
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key});
@@ -42,9 +39,8 @@ class AdminHomeScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Batal', style: TextStyle(fontFamily: 'Poppins')),
-          ),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Batal', style: TextStyle(fontFamily: 'Poppins'))),
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
@@ -162,6 +158,19 @@ class AdminHomeScreen extends StatelessWidget {
                       MaterialPageRoute(builder: (_) => const ScanScreen()),
                     );
                   }),
+                  // UBAH BAGIAN INI - Dari Coming Soon ke Navigator
+                  _quickActionTile(Icons.people_alt, "Participant\nManagement", () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ParticipantManagementScreen()),
+                    );
+                  }),
+                  _quickActionTile(Icons.event, "Event\nManagement", () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ScanScreen()),
+                    );
+                  }),
                   _quickActionTile(
                     Icons.people_alt,
                     "Participant\nManagement",
@@ -192,7 +201,9 @@ class AdminHomeScreen extends StatelessWidget {
                     },
                   ),
                   _quickActionTile(Icons.upload_file, "Export\nData", () {
-                    _handleExportData(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Coming Soon")),
+                    );
                   }),
                 ],
               ),
@@ -245,23 +256,42 @@ class AdminHomeScreen extends StatelessWidget {
     );
   }
 
-  // ===================== FUNGSI EKSPOR DATA (MOBILE ONLY) =====================
-  Future<void> _handleExportData(BuildContext context) async {
-    final dialogContext = context;
-
-    // Tampilkan loading dialog
-    showDialog(
-      context: dialogContext,
-      barrierDismissible: false,
-      builder: (context) => const AlertDialog(
-        content: Row(
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 16),
-            Text("Mengekspor data...", style: TextStyle(fontFamily: 'Poppins')),
-          ],
+  Widget _statsSection() {
+    return Row(
+      children: [
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection("users").snapshots(),
+            builder: (context, snap) {
+              final total = snap.data?.docs.length ?? 0;
+              return _statCard(
+                "$total",
+                "Total Participant",
+                Colors.blue.shade50,
+                Colors.blue,
+              );
+            },
+          ),
         ),
-      ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: FutureBuilder<QuerySnapshot>(
+            future: FirebaseFirestore.instance
+                .collection("absences")
+                .where("status", isEqualTo: "hadir")
+                .get(),
+            builder: (context, snap) {
+              final count = snap.data?.docs.length ?? 0;
+              return _statCard(
+                "$count",
+                "Checked-in",
+                Colors.orange.shade50,
+                Colors.orange,
+              );
+            },
+          ),
+        ),
+      ],
     );
 
     try {
@@ -661,14 +691,15 @@ class AdminHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _statCard(String value, String label, Color bg, Color accent) {
-    return Expanded(
+  Widget _quickActionTile(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
         decoration: BoxDecoration(
@@ -676,17 +707,9 @@ class AdminHomeScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: accent,
-                fontFamily: 'Poppins',
-              ),
-            ),
+            Icon(icon, size: 32, color: Colors.deepPurple),
             const SizedBox(height: 8),
             Text(
               label,
@@ -784,7 +807,7 @@ class AdminHomeScreen extends StatelessWidget {
                     color: Colors.black.withOpacity(.05),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
-                  ),
+                  )
                 ],
               ),
               child: Column(
@@ -947,9 +970,9 @@ class AdminHomeScreen extends StatelessWidget {
                           ),
                         ),
                         child: const Icon(Icons.share),
-                      ),
+                      )
                     ],
-                  ),
+                  )
                 ],
               ),
             );
