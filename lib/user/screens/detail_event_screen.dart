@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:absensi_acara/models/event.dart';
 import 'package:absensi_acara/user/service/event_register_service.dart';
 import 'package:absensi_acara/user/screens/success_screen.dart';
+import 'review_ticket_screen.dart';
 
 class DetailEventScreen extends ConsumerWidget {
   final String eventId;
@@ -246,19 +247,16 @@ class DetailEventScreen extends ConsumerWidget {
                                 : () async {
                                     try {
                                       if (!isRegistered) {
-                                        await ref
-                                            .read(eventRegisterService)
-                                            .daftarEvent(
-                                              eventId: eventId,
-                                              userId: userId,
-                                            );
-
+                                        // Navigate first to review ticket page; registration happens there when user taps Continue
                                         if (context.mounted) {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder: (_) =>
-                                                  const SuccessScreen(),
+                                                  ReviewTicketScreen(
+                                                    eventId: eventId,
+                                                    userId: userId,
+                                                  ),
                                             ),
                                           );
                                         }
