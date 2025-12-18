@@ -76,7 +76,7 @@ flutter run
 ---
 
 ## 📱 Demo Aplikasi
-Video demo aplikasi tersedia melalui link YouTube (Unlisted) atau Google Drive (Public) sesuai ketentuan penilaian.
+Video demo aplikasi tersedia melalui link YouTube (WIP)
 
 ---
 
